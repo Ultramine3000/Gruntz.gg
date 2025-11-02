@@ -1,10 +1,11 @@
-[gd_scene load_steps=104 format=4 uid="uid://ca5t4kb0exg4c"]
+[gd_scene load_steps=105 format=4 uid="uid://ca5t4kb0exg4c"]
 
 [ext_resource type="Script" uid="uid://dp3fracdhc7rq" path="res://scripts/_player.gd" id="1_5hy7b"]
 [ext_resource type="Resource" uid="uid://bx42dgst4c4fy" path="res://assets/weapons/AKS74.tres" id="2_jvpc5"]
 [ext_resource type="PackedScene" uid="uid://cwg0e8x1blt3" path="res://assets/rigs/arms-AKS74.tscn" id="2_k453k"]
+[ext_resource type="PackedScene" uid="uid://bnjydn82lcvtv" path="res://core/hud_splitscreen.tscn" id="2_m83dv"]
 [ext_resource type="PackedScene" uid="uid://cts8or62xnx6l" path="res://assets/bullets/tracer.tscn" id="2_p73st"]
-[ext_resource type="PackedScene" uid="uid://ucqk0dfof7w1" path="res://core/hud.tscn" id="2_rah5i"]
+[ext_resource type="PackedScene" uid="uid://8t666chqvg8i" path="res://core/hud_multiplayer.tscn" id="3_80tbj"]
 [ext_resource type="PackedScene" uid="uid://xlu0x0g21agd" path="res://assets/rigs/arms-TarusJudge.tscn" id="3_lev4v"]
 [ext_resource type="Resource" uid="uid://dquo5pg6at53p" path="res://assets/weapons/Kar98.tres" id="3_p73st"]
 [ext_resource type="PackedScene" uid="uid://cp5oagta4q6x0" path="res://assets/rigs/arms-Kar98.tscn" id="5_p73st"]
@@ -12416,17 +12417,19 @@ properties/1/replication_mode = 1
 properties/2/path = NodePath(".:rotation:y")
 properties/2/spawn = true
 properties/2/replication_mode = 1
-properties/3/path = NodePath(".:sprinting")
+properties/3/path = NodePath(".:animation_inputs")
 properties/3/spawn = false
 properties/3/replication_mode = 2
-properties/4/path = NodePath(".:animation_inputs")
-properties/4/spawn = false
+properties/4/path = NodePath(".:is_sprinting")
+properties/4/spawn = true
 properties/4/replication_mode = 2
 
 [node name="player" type="CharacterBody3D" groups=["players"]]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
 collision_mask = 6
 script = ExtResource("1_5hy7b")
+hud_splitscreen = ExtResource("2_m83dv")
+hud_multiplayer = ExtResource("3_80tbj")
 bob_speed = 6.0
 bob_amount = 0.001
 camera_sensitivity = 1.0
@@ -12469,8 +12472,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.41737, -21)
 visible = false
 mesh = SubResource("BoxMesh_p73st")
-
-[node name="hud" parent="." instance=ExtResource("2_rah5i")]
 
 [node name="die_anim" type="AnimationPlayer" parent="."]
 libraries = {

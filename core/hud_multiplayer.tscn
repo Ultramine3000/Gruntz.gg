@@ -1,14 +1,14 @@
-[gd_scene load_steps=17 format=3 uid="uid://ucqk0dfof7w1"]
+[gd_scene load_steps=17 format=3 uid="uid://8t666chqvg8i"]
 
-[ext_resource type="Texture2D" uid="uid://dvv4253o8mga7" path="res://assets/textures/ui/crosshair.png" id="1_5j50p"]
-[ext_resource type="Script" uid="uid://cx2waf81771er" path="res://scripts/_hud.gd" id="1_wp0j3"]
-[ext_resource type="Texture2D" uid="uid://d15tlq33gen8i" path="res://assets/textures/ui/health_icon.png" id="3_kkv7h"]
-[ext_resource type="Texture2D" uid="uid://drj53crcwcvq3" path="res://assets/textures/ui/blood_overlay.png" id="4_whbmk"]
-[ext_resource type="Texture2D" uid="uid://4jb3av6g8r1y" path="res://assets/textures/ui/victory.webp" id="5_qqf8p"]
-[ext_resource type="Texture2D" uid="uid://dcw54ph03stcp" path="res://assets/textures/ui/defeat.png" id="6_eclha"]
-[ext_resource type="AudioStream" uid="uid://p13voft6ohx5" path="res://assets/sfx/ui/have_mercy.mp3" id="7_eclha"]
-[ext_resource type="Texture2D" uid="uid://ggsmtdl0lfq1" path="res://assets/textures/ui/vignette.png" id="8_vjwwo"]
-[ext_resource type="Texture2D" uid="uid://depoaeh78y2lw" path="res://assets/rigs/kar98_arms/scope.png" id="9_d1q6q"]
+[ext_resource type="Script" uid="uid://cx2waf81771er" path="res://scripts/_hud.gd" id="1_23gx6"]
+[ext_resource type="Texture2D" uid="uid://dvv4253o8mga7" path="res://assets/textures/ui/crosshair.png" id="2_8ux68"]
+[ext_resource type="Texture2D" uid="uid://d15tlq33gen8i" path="res://assets/textures/ui/health_icon.png" id="3_08ip1"]
+[ext_resource type="Texture2D" uid="uid://drj53crcwcvq3" path="res://assets/textures/ui/blood_overlay.png" id="4_inckf"]
+[ext_resource type="Texture2D" uid="uid://ggsmtdl0lfq1" path="res://assets/textures/ui/vignette.png" id="5_lselu"]
+[ext_resource type="Texture2D" uid="uid://4jb3av6g8r1y" path="res://assets/textures/ui/victory.webp" id="6_anhkw"]
+[ext_resource type="Texture2D" uid="uid://dcw54ph03stcp" path="res://assets/textures/ui/defeat.png" id="7_drg6k"]
+[ext_resource type="AudioStream" uid="uid://p13voft6ohx5" path="res://assets/sfx/ui/have_mercy.mp3" id="8_dkiqr"]
+[ext_resource type="Texture2D" uid="uid://depoaeh78y2lw" path="res://assets/rigs/kar98_arms/scope.png" id="9_5sv5b"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bw7k3"]
 bg_color = Color(0, 0, 0, 0)
@@ -86,10 +86,11 @@ grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(1.2, 1.2)
 size_flags_horizontal = 4
-script = ExtResource("1_wp0j3")
+script = ExtResource("1_23gx6")
 metadata/_edit_use_anchors_ = true
 
 [node name="border" type="Panel" parent="."]
+visible = false
 layout_mode = 0
 offset_right = 1600.0
 offset_bottom = 450.0
@@ -99,24 +100,24 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_bw7k3")
 visible = false
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 0
-offset_left = 784.0
-offset_top = 209.0
-offset_right = 816.0
-offset_bottom = 241.0
-texture = ExtResource("1_5j50p")
+offset_left = 764.1666
+offset_top = 434.16663
+offset_right = 796.1666
+offset_bottom = 466.16663
+texture = ExtResource("2_8ux68")
 
 [node name="health" type="Control" parent="."]
 anchors_preset = 0
-offset_left = 1285.0
-offset_top = 405.0
-offset_right = 1589.0
-offset_bottom = 437.0
+offset_left = 1283.3333
+offset_top = 855.0
+offset_right = 1587.3333
+offset_bottom = 887.0
 
 [node name="icon" type="TextureRect" parent="health"]
 layout_mode = 0
 offset_right = 32.0
 offset_bottom = 32.0
-texture = ExtResource("3_kkv7h")
+texture = ExtResource("3_08ip1")
 
 [node name="bar" type="ProgressBar" parent="health"]
 layout_mode = 0
@@ -130,10 +131,10 @@ show_percentage = false
 
 [node name="ammo" type="Control" parent="."]
 anchors_preset = 0
-offset_left = 16.0
-offset_top = 398.0
-offset_right = 411.0
-offset_bottom = 453.0
+offset_left = 16.666666
+offset_top = 845.8333
+offset_right = 411.66666
+offset_bottom = 900.8333
 
 [node name="extra" type="Label" parent="ammo"]
 layout_mode = 0
@@ -171,38 +172,38 @@ vertical_alignment = 1
 
 [node name="damage_indicator" type="TextureRect" parent="."]
 layout_mode = 0
-offset_right = 1600.0
-offset_bottom = 450.0
-texture = ExtResource("4_whbmk")
+offset_right = 1602.5
+offset_bottom = 900.0
+texture = ExtResource("4_inckf")
 expand_mode = 1
 
 [node name="shoot_indicator" type="TextureRect" parent="."]
 layout_mode = 0
 offset_right = 1600.0
-offset_bottom = 450.0
-texture = ExtResource("8_vjwwo")
+offset_bottom = 905.0
+texture = ExtResource("5_lselu")
 expand_mode = 1
 
 [node name="player_label" type="Label" parent="."]
 layout_mode = 0
-offset_left = 1513.0
-offset_top = 368.0
-offset_right = 1578.0
-offset_bottom = 411.0
+offset_left = 1528.3333
+offset_top = 5.0
+offset_right = 1593.3333
+offset_bottom = 48.0
 text = "Player: ?"
 
 [node name="victory" type="Sprite2D" parent="."]
 visible = false
-position = Vector2(779, 226)
-texture = ExtResource("5_qqf8p")
+position = Vector2(789.99994, 448.3333)
+texture = ExtResource("6_anhkw")
 
 [node name="defeat" type="Sprite2D" parent="."]
 visible = false
-position = Vector2(768, 225)
-texture = ExtResource("6_eclha")
+position = Vector2(776.6666, 443.3333)
+texture = ExtResource("7_drg6k")
 
 [node name="victory_audio" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("7_eclha")
+stream = ExtResource("8_dkiqr")
 volume_db = 4.147
 pitch_scale = 1.02
 
@@ -250,16 +251,18 @@ text = "Look Sensitivity"
 [node name="scope" type="Sprite2D" parent="."]
 visible = false
 z_index = -2
-position = Vector2(799.167, 226.667)
-scale = Vector2(0.435357, 0.416281)
-texture = ExtResource("9_d1q6q")
+position = Vector2(806.6666, 457.5)
+scale = Vector2(0.865, 0.827)
+texture = ExtResource("9_5sv5b")
 
-[node name="border" type="Sprite2D" parent="scope"]
-position = Vector2(1274.53, 4.57764e-05)
-scale = Vector2(17.7746, 16.8281)
+[node name="border3" type="Sprite2D" parent="scope"]
+position = Vector2(91.8787, -1107.0244)
+rotation = 1.5705062
+scale = Vector2(19.30591, 34.844776)
 texture = SubResource("GradientTexture2D_f4txf")
 
-[node name="border2" type="Sprite2D" parent="scope"]
-position = Vector2(-1377.24, -4.50413)
-scale = Vector2(14.3852, 17.0314)
+[node name="border4" type="Sprite2D" parent="scope"]
+position = Vector2(38.282852, 1111.0283)
+rotation = 1.5705062
+scale = Vector2(19.30591, 34.844776)
 texture = SubResource("GradientTexture2D_f4txf")
