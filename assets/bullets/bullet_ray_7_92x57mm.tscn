@@ -1,6 +1,6 @@
-[gd_scene load_steps=8 format=3 uid="uid://uicruiqn58in"]
+[gd_scene load_steps=8 format=3 uid="uid://0hfsyvu2gt01"]
 
-[ext_resource type="Script" uid="uid://byd3uqeweh2rt" path="res://scripts/bullet-ray.gd" id="1_redph"]
+[ext_resource type="Script" uid="uid://byd3uqeweh2rt" path="res://scripts/bullet-ray.gd" id="1_1mrvy"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0qc51"]
 transparency = 1
@@ -92,13 +92,13 @@ _data = {
 &"fade_3": SubResource("Animation_5duwx")
 }
 
-[node name="bullet_ray_small" type="Node3D"]
-script = ExtResource("1_redph")
-damage = 21
+[node name="bullet_ray_large" type="Node3D"]
+script = ExtResource("1_1mrvy")
+damage = 68
 
 [node name="hit_ray" type="RayCast3D" parent="."]
-target_position = Vector3(0, 0, -100)
-collision_mask = 26
+target_position = Vector3(0, 0, -1000)
+collision_mask = 10
 collide_with_areas = true
 
 [node name="trail" type="MeshInstance3D" parent="."]

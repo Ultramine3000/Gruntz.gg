@@ -1,7 +1,6 @@
 [gd_scene load_steps=105 format=4 uid="uid://ca5t4kb0exg4c"]
 
 [ext_resource type="Script" uid="uid://dp3fracdhc7rq" path="res://scripts/_player.gd" id="1_5hy7b"]
-[ext_resource type="Resource" uid="uid://bx42dgst4c4fy" path="res://assets/weapons/AKS74.tres" id="2_jvpc5"]
 [ext_resource type="PackedScene" uid="uid://cwg0e8x1blt3" path="res://assets/rigs/arms-AKS74.tscn" id="2_k453k"]
 [ext_resource type="PackedScene" uid="uid://bnjydn82lcvtv" path="res://core/hud_splitscreen.tscn" id="2_m83dv"]
 [ext_resource type="PackedScene" uid="uid://cts8or62xnx6l" path="res://assets/bullets/tracer.tscn" id="2_p73st"]
@@ -9,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://xlu0x0g21agd" path="res://assets/rigs/arms-TarusJudge.tscn" id="3_lev4v"]
 [ext_resource type="Resource" uid="uid://dquo5pg6at53p" path="res://assets/weapons/Kar98.tres" id="3_p73st"]
 [ext_resource type="PackedScene" uid="uid://cp5oagta4q6x0" path="res://assets/rigs/arms-Kar98.tscn" id="5_p73st"]
+[ext_resource type="Resource" uid="uid://b1un2a15q5vl7" path="res://assets/weapons/TarusJudge.tres" id="6_m83dv"]
 [ext_resource type="AudioStream" uid="uid://cfkmvyal1k020" path="res://assets/sfx/movement/footsteps.wav" id="9_2dpcx"]
 [ext_resource type="AudioStream" uid="uid://cifl40tiw4yvk" path="res://assets/sfx/movement/hurt.wav" id="10_2dpcx"]
 [ext_resource type="Script" uid="uid://ceoytqekwnghg" path="res://scripts/Hitbox.gd" id="11_s55bn"]
@@ -12432,7 +12432,9 @@ hud_splitscreen = ExtResource("2_m83dv")
 hud_multiplayer = ExtResource("3_80tbj")
 bob_speed = 6.0
 bob_amount = 0.001
-camera_sensitivity = 1.0
+camera_sensitivity = 1.9
+scope_sway_amount = 0.015
+scope_sway_speed = 0.416
 max_walk_speed = 1.4
 max_sprint_speed = 2.0
 accel = 5.0
@@ -12440,7 +12442,7 @@ decel = 10.0
 jump_force = 2.0
 tracer_scene = ExtResource("2_p73st")
 current_weapon = ExtResource("3_p73st")
-side_weapon = ExtResource("2_jvpc5")
+side_weapon = ExtResource("6_m83dv")
 ammo_default_multiplier = 10
 player_muzzle_flash = NodePath("body/body_rig/Armature/Skeleton3D/muzzle_flash/muzzle_flash")
 
@@ -12464,9 +12466,6 @@ transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
 
 [node name="TarusJudge" parent="camera/arms" instance=ExtResource("3_lev4v")]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
-
-[node name="barrel" type="Marker3D" parent="camera"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
 
 [node name="look_object" type="MeshInstance3D" parent="camera"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.41737, -21)
@@ -12496,6 +12495,7 @@ pitch_scale = 0.86
 [node name="take_damage_sound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("10_2dpcx")
 volume_db = -5.201
+pitch_scale = 0.78
 
 [node name="HeadHitBox" type="Area3D" parent="."]
 collision_layer = 8
@@ -13049,7 +13049,7 @@ transform = Transform3D(-9.31323e-09, -0.201005, -1.42172e-08, 0.201005, -1.9557
 visible = false
 light_color = Color(1, 0.647059, 0, 1)
 light_energy = 0.5
-omni_range = 1.013
+omni_range = 0.4
 
 [node name="MuzzlePlanes" type="GPUParticles3D" parent="body/body_rig/Armature/Skeleton3D/muzzle_flash/muzzle_flash"]
 transform = Transform3D(-0.3293553, 0.08145539, 0.022138432, 0.021275993, -0.0061838394, 0.3392773, 0.08168491, 0.33004054, 0.000893048, 0.020513773, 0.036042318, 0.0050217286)
