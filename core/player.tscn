@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://xlu0x0g21agd" path="res://assets/rigs/arms-TarusJudge.tscn" id="3_lev4v"]
 [ext_resource type="Resource" uid="uid://dquo5pg6at53p" path="res://assets/weapons/Kar98.tres" id="3_p73st"]
 [ext_resource type="PackedScene" uid="uid://cp5oagta4q6x0" path="res://assets/rigs/arms-Kar98.tscn" id="5_p73st"]
-[ext_resource type="Resource" uid="uid://b1un2a15q5vl7" path="res://assets/weapons/TarusJudge.tres" id="6_m83dv"]
+[ext_resource type="Resource" uid="uid://bx42dgst4c4fy" path="res://assets/weapons/AKS74.tres" id="6_m83dv"]
 [ext_resource type="AudioStream" uid="uid://cfkmvyal1k020" path="res://assets/sfx/movement/footsteps.wav" id="9_2dpcx"]
 [ext_resource type="AudioStream" uid="uid://cifl40tiw4yvk" path="res://assets/sfx/movement/hurt.wav" id="10_2dpcx"]
 [ext_resource type="Script" uid="uid://ceoytqekwnghg" path="res://scripts/Hitbox.gd" id="11_s55bn"]

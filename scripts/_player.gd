@@ -901,7 +901,7 @@ func move_tracer(hit_position: Vector3):
 	tracer.global_transform = Transform3D(barrel.global_transform.basis, barrel.global_transform.origin)
 
 	# Define a constant tracer speed (units per second)
-	var tracer_speed = 150.0  # Adjust as needed
+	var tracer_speed = 65.0  # Adjust as needed
 
 	# Calculate travel distance & time
 	var distance = barrel.global_transform.origin.distance_to(hit_position)

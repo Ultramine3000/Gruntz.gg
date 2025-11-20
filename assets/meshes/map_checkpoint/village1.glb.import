@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://eu4kpj7il884"
-path="res://.godot/imported/oil_tank.glb-b1f8a94c9f51dd64d26741fc3628045b.scn"
+uid="uid://ciprtdbsa71h4"
+path="res://.godot/imported/village1.glb-9a919dad4a159bcb57d0f7e5304e46af.scn"
 
 [deps]
 
-source_file="res://assets/meshes/map_checkpoint/oil_tank.glb"
-dest_files=["res://.godot/imported/oil_tank.glb-b1f8a94c9f51dd64d26741fc3628045b.scn"]
+source_file="res://assets/meshes/map_checkpoint/village1.glb"
+dest_files=["res://.godot/imported/village1.glb-9a919dad4a159bcb57d0f7e5304e46af.scn"]
 
 [params]
 
@@ -22,7 +22,7 @@ nodes/import_as_skeleton_bones=false
 nodes/use_name_suffixes=true
 nodes/use_node_type_suffixes=true
 meshes/ensure_tangents=true
-meshes/generate_lods=false
+meshes/generate_lods=true
 meshes/create_shadow_meshes=true
 meshes/light_baking=1
 meshes/lightmap_texel_size=0.2

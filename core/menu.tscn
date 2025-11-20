@@ -19,7 +19,7 @@ script = ExtResource("1_wd2sg")
 custom_minimum_size = Vector2(1920, 1080)
 layout_mode = 0
 offset_right = 1920.0
-offset_bottom = 1074.0
+offset_bottom = 1080.0
 stretch = true
 
 [node name="viewport" type="SubViewport" parent="background"]
@@ -31,10 +31,12 @@ render_target_update_mode = 4
 
 [node name="menu" parent="background/viewport" instance=ExtResource("2_grplm")]
 
-[node name="Camera3D" type="Camera3D" parent="background/viewport"]
-transform = Transform3D(-0.8428377, 0, -0.53816783, 0, 1, 0, 0.53816783, 0, -0.8428377, -61.6063, 8.54683, 8.2806)
+[node name="Camera3D3" type="Camera3D" parent="background/viewport/menu"]
+transform = Transform3D(-0.8428377, 0, -0.53816783, 0, 1, 0, 0.53816783, 0, -0.8428377, -62.042274, 8.54683, 8.2806)
+projection = 1
 current = true
-fov = 51.4
+fov = 60.6
+size = 1.472
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("9_6yjyn")
