@@ -12455,6 +12455,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 current = true
 fov = 35.0
 near = 0.001
+far = 1000.0
 
 [node name="arms" type="Node3D" parent="camera"]
 

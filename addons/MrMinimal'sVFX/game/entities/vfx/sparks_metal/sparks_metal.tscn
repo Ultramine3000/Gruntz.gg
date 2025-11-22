@@ -1,28 +1,25 @@
 [gd_scene load_steps=5 format=3 uid="uid://ctqrwrw5byilx"]
 
-[ext_resource type="Texture2D" uid="uid://clhbx0gvncq2y" path="res://addons/MrMinimal'sVFX/addons/kenney-particles/textures/trace_01.png" id="1_d6khe"]
 [ext_resource type="Material" uid="uid://d1nov2aid5764" path="res://addons/MrMinimal'sVFX/game/entities/vfx/sparks_metal/sparks_metal.tres" id="1_do0h3"]
+[ext_resource type="Shader" uid="uid://bj3sxere0rjmq" path="res://addons/MrMinimal'sVFX/game/entities/vfx/sparks_metal/metalspark.gdshader" id="2_do0h3"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ylrsi"]
-transparency = 2
-alpha_scissor_threshold = 0.33
-alpha_antialiasing_mode = 0
-cull_mode = 2
-albedo_color = Color(1, 0.87058824, 0.101960786, 1)
-albedo_texture = ExtResource("1_d6khe")
-emission_enabled = true
-emission = Color(0.99999994, 0.88251233, 0.2947145, 1)
-emission_energy_multiplier = 2.05
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_do0h3"]
+render_priority = 0
+shader = ExtResource("2_do0h3")
+shader_parameter/spark_color = Color(1, 0.8, 0.4, 1)
+shader_parameter/hot_core_color = Color(1, 1, 0.95, 1)
+shader_parameter/brightness = 3.0
+shader_parameter/fade_power = 2.0
 
-[sub_resource type="QuadMesh" id="QuadMesh_0u0tx"]
-material = SubResource("StandardMaterial3D_ylrsi")
-size = Vector2(0.07, 0.1)
+[sub_resource type="QuadMesh" id="QuadMesh_6inge"]
+material = SubResource("ShaderMaterial_do0h3")
+size = Vector2(0.015, 0.15)
 
 [node name="SparksMetal" type="GPUParticles3D"]
 cast_shadow = 0
 gi_mode = 0
 emitting = false
-amount = 5
+amount = 10
 lifetime = 2.0
 one_shot = true
 explosiveness = 1.0
@@ -30,4 +27,4 @@ randomness = 1.0
 fixed_fps = 60
 transform_align = 3
 process_material = ExtResource("1_do0h3")
-draw_pass_1 = SubResource("QuadMesh_0u0tx")
+draw_pass_1 = SubResource("QuadMesh_6inge")

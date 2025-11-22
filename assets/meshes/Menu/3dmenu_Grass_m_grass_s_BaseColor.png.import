@@ -2,20 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cxpvme51xtt27"
-path.s3tc="res://.godot/imported/village_UV_tree_in2.png-2e01099df2b4a672b5473cd7eb59a891.s3tc.ctex"
+uid="uid://mbv6gbm21xh"
+path.s3tc="res://.godot/imported/3dmenu_Grass_m_grass_s_BaseColor.png-b2d19b6c91467c3ebf216556da6ed207.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "fae44ad1c2e6fcddfeb81c6fa9242f78"
+"md5": "22021bf5ee1919491ac188355699fa3c"
 }
 
 [deps]
 
-source_file="res://assets/meshes/map_checkpoint/village_UV_tree_in2.png"
-dest_files=["res://.godot/imported/village_UV_tree_in2.png-2e01099df2b4a672b5473cd7eb59a891.s3tc.ctex"]
+source_file="res://assets/meshes/Menu/3dmenu_Grass_m_grass_s_BaseColor.png"
+dest_files=["res://.godot/imported/3dmenu_Grass_m_grass_s_BaseColor.png-b2d19b6c91467c3ebf216556da6ed207.s3tc.ctex"]
 
 [params]
 
