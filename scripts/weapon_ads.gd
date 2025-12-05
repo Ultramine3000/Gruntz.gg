@@ -23,6 +23,13 @@ extends Node3D
 @export_range(0.0, 20.0) var recoil_recovery_speed := 1.4  # How fast weapon returns to normal
 @export_range(0.0, 1.0) var recoil_ads_multiplier := 0.5  # Recoil reduction when ADS (50% reduction)
 
+## SCOPE RECOIL SETTINGS ##
+@export_category("Scope Recoil Settings")
+@export_range(0.0, 200.0) var scope_recoil_kick := 80.0  # How far the scope kicks up (pixels)
+@export_range(0.0, 100.0) var scope_recoil_sway := 25.0  # Horizontal sway amount (pixels)
+@export_range(0.0, 20.0) var scope_recoil_recovery := 8.0  # How fast scope returns to center
+@export_range(0.0, 1.0) var scope_recoil_damping := 0.85  # Dampening for smooth settling
+
 ## FIGURE-8 ROTATION SETTINGS ##
 @export_category("Figure-8 Settings")
 @export_range(0.0, 2.0) var rotation_speed := 0.65  # Speed of the figure-8 motion
@@ -69,6 +76,9 @@ var target_recoil_rotation := Vector3.ZERO
 
 # Scope variables
 var scope_node: Node = null
+var scope_recoil_offset := Vector2.ZERO  # Current offset for scope recoil
+var scope_recoil_velocity := Vector2.ZERO  # Velocity for scope movement
+var scope_original_position := Vector2.ZERO  # Store original scope position
 
 func _ready():
 	print("ADS Script _ready() called")
@@ -115,6 +125,9 @@ func _initialize_scope():
 			# Make sure scope starts hidden
 			if scope_node:
 				scope_node.visible = false
+				# Store original position
+				if scope_node is Control:
+					scope_original_position = scope_node.position
 				print("ADS Script: Scope node visibility set to false")
 		else:
 			print("ADS Script: Scope node not found in HUD! Available children:")
@@ -134,6 +147,9 @@ func _process(delta: float):
 	
 	# Update recoil recovery
 	_update_recoil_recovery(delta)
+	
+	# Update scope recoil (if scope is active)
+	_update_scope_recoil(delta)
 	
 	# Create base figure-8 pattern (reduced when sprinting)
 	var figure8_intensity = 1.0 - (current_sprint_intensity * 0.8)  # Reduce figure-8 when sprinting
@@ -158,6 +174,49 @@ func _process(delta: float):
 	# Update position with sprint and recoil
 	_update_position_with_sprint_and_recoil()
 
+func _update_scope_recoil(delta: float):
+	# Only process scope recoil if scope is visible
+	if not scope_node or not scope_node.visible or not scope_node is Control:
+		return
+	
+	# Apply spring physics to scope recoil
+	# Calculate force towards center (spring force)
+	var spring_force = -scope_recoil_offset * scope_recoil_recovery
+	
+	# Add damping to prevent endless oscillation
+	var damping_force = -scope_recoil_velocity * (1.0 - scope_recoil_damping) * 10.0
+	
+	# Update velocity
+	scope_recoil_velocity += (spring_force + damping_force) * delta
+	
+	# Update position
+	scope_recoil_offset += scope_recoil_velocity * delta
+	
+	# Apply the offset to the scope position
+	scope_node.position = scope_original_position + scope_recoil_offset
+	
+	# Once settled enough, snap to zero to prevent floating point drift
+	if scope_recoil_offset.length() < 0.5 and scope_recoil_velocity.length() < 1.0:
+		scope_recoil_offset = Vector2.ZERO
+		scope_recoil_velocity = Vector2.ZERO
+		scope_node.position = scope_original_position
+
+func apply_scope_recoil():
+	"""Call this function when the weapon fires while scoped to create scope recoil effect"""
+	if not is_sniper or not is_ads or not scope_node or not scope_node.visible:
+		return
+	
+	# Add upward kick with random horizontal sway
+	var horizontal_variation = randf_range(-scope_recoil_sway, scope_recoil_sway)
+	
+	# Add to velocity for more dynamic, physics-based movement
+	scope_recoil_velocity += Vector2(
+		horizontal_variation,  # X: Random left/right sway
+		-scope_recoil_kick      # Y: Upward kick (negative because up is negative in screen space)
+	)
+	
+	print("Scope recoil applied - velocity: ", scope_recoil_velocity)
+
 func _update_recoil_recovery(delta: float):
 	# Smoothly recover recoil back to zero
 	current_recoil_position = current_recoil_position.lerp(Vector3.ZERO, recoil_recovery_speed * delta)
@@ -173,6 +232,9 @@ func apply_recoil():
 	# Check if recoil is enabled
 	if not recoil_enabled:
 		return
+	
+	# Apply scope recoil if scoped in with a sniper
+	apply_scope_recoil()
 	
 	# Calculate recoil multiplier based on ADS state
 	var multiplier = recoil_ads_multiplier if is_ads else 1.0
@@ -233,6 +295,12 @@ func _update_input_response(delta: float):
 	if player_reference == null:
 		return
 	
+	# Don't process input when paused
+	if player_reference.hud and player_reference.hud.is_paused:
+		# Smoothly return to neutral position when paused
+		current_input_offset = current_input_offset.lerp(Vector3.ZERO, input_smoothing * 2.0)
+		return
+	
 	# Calculate target offset based on input
 	target_input_offset = Vector3.ZERO
 	
@@ -263,19 +331,18 @@ func _update_input_response(delta: float):
 		vertical_input = Input.get_axis("p" + str(player_ctrl_port) + "_cam_dn", "p" + str(player_ctrl_port) + "_cam_up")
 	
 	# Apply input response (opposite direction for realistic weapon movement)
+	# Only apply X (pitch) and Y (yaw) rotation - no Z (roll) rotation
 	if abs(horizontal_input) > 0.005:  # Smaller deadzone for smoother response
 		if horizontal_input > 0:  # Looking right
-			target_input_offset.z -= current_strength  # Roll left
-			target_input_offset.y += current_strength * 0.3  # Less yaw for smoothness
+			target_input_offset.y += current_strength * 0.3  # Yaw right
 		else:  # Looking left
-			target_input_offset.z += current_strength  # Roll right
-			target_input_offset.y -= current_strength * 0.3  # Less yaw for smoothness
+			target_input_offset.y -= current_strength * 0.3  # Yaw left
 	
 	if abs(vertical_input) > 0.005:  # Smaller deadzone
 		if vertical_input > 0:  # Looking up
-			target_input_offset.x -= current_strength * 0.5  # Less pitch for smoothness
+			target_input_offset.x -= current_strength * 0.5  # Pitch down
 		else:  # Looking down
-			target_input_offset.x += current_strength * 0.5  # Less pitch for smoothness
+			target_input_offset.x += current_strength * 0.5  # Pitch up
 	
 	# Much smoother interpolation with adaptive speed based on ADS
 	var lerp_speed = input_smoothing
@@ -310,6 +377,12 @@ func _show_scope():
 			scope_node.visible = true
 			print("ADS Script: Scope visibility set to TRUE")
 			
+			# Reset scope recoil state when showing scope
+			scope_recoil_offset = Vector2.ZERO
+			scope_recoil_velocity = Vector2.ZERO
+			if scope_node is Control:
+				scope_node.position = scope_original_position
+			
 			# Hide weapon after scope is shown
 			_hide_weapon()
 		else:
@@ -331,6 +404,11 @@ func _hide_scope():
 	
 	if scope_node:
 		scope_node.visible = false
+		# Reset scope position when hiding
+		scope_recoil_offset = Vector2.ZERO
+		scope_recoil_velocity = Vector2.ZERO
+		if scope_node is Control:
+			scope_node.position = scope_original_position
 		print("ADS Script: Scope visibility set to FALSE")
 
 ## WEAPON VISIBILITY FUNCTIONS ##
@@ -411,5 +489,7 @@ func reset_to_starting():
 	target_recoil_position = Vector3.ZERO
 	current_recoil_rotation = Vector3.ZERO
 	target_recoil_rotation = Vector3.ZERO
+	scope_recoil_offset = Vector2.ZERO
+	scope_recoil_velocity = Vector2.ZERO
 	# Make sure scope is hidden when resetting
 	_hide_scope()

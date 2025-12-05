@@ -43,6 +43,8 @@ var view_layer : int
 ## CAMERA ##
 @export_category("Camera")
 @export_range(0.0, 16.0) var camera_sensitivity := 0.0
+@export_range(-90.0, 0.0) var camera_min_pitch := -40.0  # Minimum vertical look angle
+@export_range(0.0, 90.0) var camera_max_pitch := 60.0  # Maximum vertical look angle
 
 var look_input := Vector2.ZERO
 var target_look_input := Vector2.ZERO
@@ -55,9 +57,8 @@ var target_look_input := Vector2.ZERO
 @export_range(0.0, 3.0) var scope_sway_speed := 1.2  # Speed of the sway
 
 var scope_sway_time := 0.0
-
-## SCOPE RECOIL ##
-@export_range(-10.0, 0.0) var scope_recoil_kick := -3.0  # How much the scope pops up
+var scope_shot_sway_intensity := 0.0  # Increases when shot, decays over time
+var scope_shot_drift := 0.0  # Upward drift after shooting
 
 ## MOVEMENT ##
 @export_category("Movement")
@@ -139,6 +140,10 @@ func _ready() -> void:
 	
 	# Load appropriate HUD based on multiplayer mode
 	_setup_hud()
+	
+	# SET PLAYER ID FOR HUD - THIS IS THE NEW LINE
+	if hud:
+		hud.set_player_id(ctrl_port)
 	
 	# Determine view layer based on mode
 	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
@@ -302,6 +307,10 @@ func _physics_process(delta: float) -> void:
 	_handle_walk_sound()  # Call the walk sound handler
 
 func _control_process():
+	
+	if hud and hud.is_paused:
+		return
+	
 	if health <= 0: return
 	
 	# For networked multiplayer, only respond to controller 0 if this is our authority
@@ -392,12 +401,11 @@ func _is_scope_visible() -> bool:
 		return scope.visible
 	return false
 
-func _apply_scope_recoil():
-	if _is_scope_visible():
-		# Just kick the camera up - no recovery needed
-		camera.rotate_x(deg_to_rad(-scope_recoil_kick))
-
 func _camera_process(delta):
+	# Don't process camera input when paused
+	if hud and hud.is_paused:
+		return
+	
 	if health <= 0:
 		return
 
@@ -435,26 +443,65 @@ func _camera_process(delta):
 	# Smooth the input to prevent clunky jumpiness
 	look_input = lerp(look_input, target_look_input, clamp(look_smoothness * delta, 0.0, 1.0))
 
-	# Apply rotation
+	# Apply horizontal rotation (no clamping needed)
 	rotate_y(deg_to_rad(look_input.x))
-	camera.rotate_x(deg_to_rad(look_input.y))
+	
+	# Check if vertical rotation would exceed limits BEFORE applying
+	var new_camera_rotation_x = camera.rotation.x + deg_to_rad(look_input.y)
+	var min_pitch_rad = deg_to_rad(camera_min_pitch)
+	var max_pitch_rad = deg_to_rad(camera_max_pitch)
+	
+	# Clamp the new rotation and apply it
+	new_camera_rotation_x = clamp(new_camera_rotation_x, min_pitch_rad, max_pitch_rad)
+	camera.rotation.x = new_camera_rotation_x
 
-	# Apply scope sway if scope is visible
+	# Apply scope sway if scope is visible (after clamping)
 	if scope_sway_enabled and _is_scope_visible():
 		scope_sway_time += delta * scope_sway_speed
 		
-		# Create gentle figure-8 sway pattern
-		var sway_x = sin(scope_sway_time) * scope_sway_amount
-		var sway_y = sin(scope_sway_time * 0.7) * scope_sway_amount * 0.6
+		# Decay the shot sway intensity over time (faster decay)
+		if scope_shot_sway_intensity > 0.0:
+			scope_shot_sway_intensity = max(scope_shot_sway_intensity - delta * 8.0, 0.0)
+		
+		# Base sway amount plus shot-induced intensity
+		var current_sway_amount = scope_sway_amount + (scope_shot_sway_intensity * 0.15)
+		
+		# Create gentle figure-8 sway pattern (intensified by shooting)
+		var sway_x = sin(scope_sway_time) * current_sway_amount
+		var sway_y = sin(scope_sway_time * 0.7) * current_sway_amount * 0.6
+		
+		# Add upward drift from shot
+		sway_y += scope_shot_drift * 0.02
+		
+		# Decay the upward drift (faster decay)
+		if scope_shot_drift > 0.0:
+			scope_shot_drift = max(scope_shot_drift - delta * 6.0, 0.0)
 		
 		# Apply sway to camera rotation
-		camera.rotation.x += deg_to_rad(sway_y)
-		camera.rotation.y += deg_to_rad(sway_x)
-
-	# Clamp vertical look
-	camera.rotation.x = clamp(camera.rotation.x, deg_to_rad(-40), deg_to_rad(60))
+		var sway_rotation_x = camera.rotation.x + deg_to_rad(sway_y)
+		var sway_rotation_y = camera.rotation.y + deg_to_rad(sway_x)
+		
+		# Clamp after sway to ensure we never exceed limits
+		camera.rotation.x = clamp(sway_rotation_x, min_pitch_rad, max_pitch_rad)
+		camera.rotation.y = sway_rotation_y
 
 func _movement_process(delta):
+	# Don't process movement when paused
+	if hud and hud.is_paused:
+		# Set input to zero when paused
+		direction = direction.lerp(Vector3.ZERO, decel * delta)
+		speed = move_toward(speed, 0.0, decel * delta)
+		var gravity := velocity.y
+		var world_gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * delta * gravity_multiplier
+		if not is_on_floor():
+			gravity -= world_gravity
+		else:
+			gravity = GRAVITY_COLLIDE
+		velocity = direction * speed
+		velocity.y = gravity
+		move_and_slide()
+		return
+	
 	# Determine controller prefix based on multiplayer mode
 	var controller_prefix = "p0"
 	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
@@ -487,7 +534,7 @@ func _movement_process(delta):
 	else:
 		speed = move_toward(speed, 0.0, decel * delta)
 	var gravity := velocity.y
-	var world_gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * delta * gravity_multiplier  # MODIFIED THIS LINE
+	var world_gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * delta * gravity_multiplier
 	if not is_on_floor():
 		gravity -= world_gravity
 	else:
@@ -855,15 +902,16 @@ func shoot():
 	# Apply weapon recoil animation
 	if current_arm_rig and current_arm_rig.has_node("LVA4_Armature"):
 		current_arm_rig.get_node("LVA4_Armature").apply_recoil()
-	
-	# Apply scope recoil if scope is visible
-	_apply_scope_recoil()
 
 	# **Reduce ammo and set cooldown**
 	shoot_cooldown = current_weapon.cooldown
 	current_weapon.current_ammo -= 1
 	hud.update_ammo()
 	hud.flash_shoot_indicator()
+	
+	if _is_scope_visible():
+		scope_shot_sway_intensity = 1.0  # Full intensity spike
+		scope_shot_drift += 3.9  # Add upward drift (accumulates for sustained fire)
 
 # New function to force play animations (useful for rapid fire)
 func play_oneshot_anim_arms_force(anim_name: String, custom_blend: float = -1.0, custom_speed: float = 1.0, from_end: bool = false):

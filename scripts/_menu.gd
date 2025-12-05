@@ -10,20 +10,40 @@ enum MenuState {
 var current_state := MenuState.MAIN_MENU
 
 # Core game settings
-var selected_player_count := 2
 var selected_map := "map_checkpoint"
 var selected_points := 10
 var available_maps := ["map_checkpoint", "Map2", "Map3"]
 var current_map_index := 0
+
+# Controller detection textures
+@export var controller_detected_texture: Texture2D
+@export var controller_not_detected_texture: Texture2D
 
 # UI containers
 var main_menu_container: VBoxContainer
 var match_setup_container: Control
 var multiplayer_lobby_container: Control
 
-# Focusable buttons array for navigation
-var current_buttons: Array[Button] = []
+# Controller status displays
+var p0_controller_icon: TextureRect
+var p1_controller_icon: TextureRect
+
+# Focusable items array for navigation (buttons + selectors)
+var current_focusable_items: Array = []
 var current_focus_index := 0
+
+# All selectors storage
+var _all_selectors: Array[FocusableSelector] = []
+
+# Custom focusable item class
+class FocusableSelector:
+	var container: HBoxContainer
+	var value_label: Label
+	var left_arrow: Label
+	var right_arrow: Label
+	var on_left: Callable
+	var on_right: Callable
+	var is_focused := false
 
 func _ready() -> void:
 	# Fill the screen
@@ -48,8 +68,26 @@ func _ready() -> void:
 	# Start at main menu
 	_switch_to_state(MenuState.MAIN_MENU)
 
+func _process(_delta: float) -> void:
+	# Update controller detection
+	if current_state == MenuState.MATCH_SETUP:
+		_update_controller_status()
+
+func _update_controller_status() -> void:
+	if not p0_controller_icon or not p1_controller_icon:
+		return
+	
+	# Check if controllers are connected
+	var p0_connected = Input.get_connected_joypads().has(0)
+	var p1_connected = Input.get_connected_joypads().has(1)
+	
+	# Update textures
+	if controller_detected_texture and controller_not_detected_texture:
+		p0_controller_icon.texture = controller_detected_texture if p0_connected else controller_not_detected_texture
+		p1_controller_icon.texture = controller_detected_texture if p1_connected else controller_not_detected_texture
+
 func _input(event: InputEvent) -> void:
-	if current_buttons.is_empty():
+	if current_focusable_items.is_empty():
 		return
 	
 	# Navigate with D-pad/analog stick/arrow keys
@@ -60,30 +98,46 @@ func _input(event: InputEvent) -> void:
 		_navigate_menu(-1)
 		accept_event()
 	
+	# Handle left/right for selectors
+	elif event.is_action_pressed("ui_left"):
+		var item = current_focusable_items[current_focus_index]
+		if item is FocusableSelector:
+			item.on_left.call()
+		accept_event()
+	elif event.is_action_pressed("ui_right"):
+		var item = current_focusable_items[current_focus_index]
+		if item is FocusableSelector:
+			item.on_right.call()
+		accept_event()
+	
 	# Select with A button (joy_button_0) or Enter
 	elif event.is_action_pressed("ui_accept"):
-		if current_focus_index < current_buttons.size():
-			current_buttons[current_focus_index].emit_signal("pressed")
+		var item = current_focusable_items[current_focus_index]
+		if item is Button:
+			item.emit_signal("pressed")
 		accept_event()
 
 func _navigate_menu(direction: int) -> void:
-	if current_buttons.is_empty():
+	if current_focusable_items.is_empty():
 		return
 	
-	current_focus_index = (current_focus_index + direction) % current_buttons.size()
+	current_focus_index = (current_focus_index + direction) % current_focusable_items.size()
 	if current_focus_index < 0:
-		current_focus_index = current_buttons.size() - 1
+		current_focus_index = current_focusable_items.size() - 1
 	
-	_update_button_focus()
+	_update_focus()
 
-func _update_button_focus() -> void:
-	for i in current_buttons.size():
-		var btn = current_buttons[i]
-		if i == current_focus_index:
-			btn.grab_focus()
-			_highlight_button(btn, true)
-		else:
-			_highlight_button(btn, false)
+func _update_focus() -> void:
+	for i in current_focusable_items.size():
+		var item = current_focusable_items[i]
+		var is_focused = (i == current_focus_index)
+		
+		if item is Button:
+			if is_focused:
+				item.grab_focus()
+			_highlight_button(item, is_focused)
+		elif item is FocusableSelector:
+			_highlight_selector(item, is_focused)
 
 func _highlight_button(btn: Button, highlighted: bool) -> void:
 	var style = StyleBoxFlat.new()
@@ -101,6 +155,16 @@ func _highlight_button(btn: Button, highlighted: bool) -> void:
 	style.border_width_bottom = 2
 	btn.add_theme_stylebox_override("normal", style)
 	btn.add_theme_stylebox_override("focus", style)
+
+func _highlight_selector(selector: FocusableSelector, highlighted: bool) -> void:
+	if highlighted:
+		selector.value_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3))
+		selector.left_arrow.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3))
+		selector.right_arrow.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3))
+	else:
+		selector.value_label.add_theme_color_override("font_color", Color(0.9, 0.7, 0.2))
+		selector.left_arrow.add_theme_color_override("font_color", Color(0.6, 0.5, 0.2))
+		selector.right_arrow.add_theme_color_override("font_color", Color(0.6, 0.5, 0.2))
 
 # ==================== MAIN MENU ====================
 
@@ -171,18 +235,61 @@ func _build_match_setup() -> void:
 	title.add_theme_color_override("font_color", Color(0.9, 0.7, 0.2))
 	panel.add_child(title)
 	
-	# Player count selector
-	var pc_selector = _make_selector("PLAYERS:", selected_player_count, 2, 8, 1)
-	pc_selector.callback_holder.callback = func(val): selected_player_count = int(val)
-	panel.add_child(pc_selector.container)
+	# Controller status section
+	var controller_container = HBoxContainer.new()
+	controller_container.add_theme_constant_override("separation", 60)
+	controller_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	
+	# P0 Controller
+	var p0_vbox = VBoxContainer.new()
+	p0_vbox.add_theme_constant_override("separation", 10)
+	var p0_label = Label.new()
+	p0_label.text = "P1"
+	p0_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	p0_label.add_theme_font_size_override("font_size", 20)
+	p0_label.add_theme_color_override("font_color", Color(0.9, 0.7, 0.2))
+	p0_vbox.add_child(p0_label)
+	
+	p0_controller_icon = TextureRect.new()
+	p0_controller_icon.custom_minimum_size = Vector2(96, 96)
+	p0_controller_icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	p0_controller_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	if controller_not_detected_texture:
+		p0_controller_icon.texture = controller_not_detected_texture
+	p0_vbox.add_child(p0_controller_icon)
+	controller_container.add_child(p0_vbox)
+	
+	# P1 Controller
+	var p1_vbox = VBoxContainer.new()
+	p1_vbox.add_theme_constant_override("separation", 10)
+	var p1_label = Label.new()
+	p1_label.text = "P2"
+	p1_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	p1_label.add_theme_font_size_override("font_size", 20)
+	p1_label.add_theme_color_override("font_color", Color(0.9, 0.7, 0.2))
+	p1_vbox.add_child(p1_label)
+	
+	p1_controller_icon = TextureRect.new()
+	p1_controller_icon.custom_minimum_size = Vector2(96, 96)
+	p1_controller_icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	p1_controller_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	if controller_not_detected_texture:
+		p1_controller_icon.texture = controller_not_detected_texture
+	p1_vbox.add_child(p1_controller_icon)
+	controller_container.add_child(p1_vbox)
+	
+	panel.add_child(controller_container)
 	
 	# Map selector
 	var map_selector = _make_map_selector()
-	panel.add_child(map_selector)
+	_all_selectors.append(map_selector)
+	panel.add_child(map_selector.container)
 	
 	# Points selector
 	var pts_selector = _make_selector("POINTS:", selected_points, 5, 100, 5)
-	pts_selector.callback_holder.callback = func(val): selected_points = int(val)
+	pts_selector.on_left = func(): _change_points(-5, pts_selector)
+	pts_selector.on_right = func(): _change_points(5, pts_selector)
+	_all_selectors.append(pts_selector)
 	panel.add_child(pts_selector.container)
 	
 	# Spacer
@@ -200,7 +307,9 @@ func _build_match_setup() -> void:
 	back_btn.pressed.connect(func(): _switch_to_state(MenuState.MAIN_MENU))
 	panel.add_child(back_btn)
 
-func _make_selector(label_text: String, initial_value: int, min_val: int, max_val: int, step: int) -> Dictionary:
+func _make_selector(label_text: String, initial_value: int, min_val: int, max_val: int, step: int) -> FocusableSelector:
+	var selector = FocusableSelector.new()
+	
 	var container = HBoxContainer.new()
 	container.add_theme_constant_override("separation", 15)
 	
@@ -210,47 +319,40 @@ func _make_selector(label_text: String, initial_value: int, min_val: int, max_va
 	lbl.add_theme_font_size_override("font_size", 20)
 	container.add_child(lbl)
 	
+	var left_arrow = Label.new()
+	left_arrow.text = "<"
+	left_arrow.custom_minimum_size = Vector2(30, 0)
+	left_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	left_arrow.add_theme_font_size_override("font_size", 28)
+	left_arrow.add_theme_color_override("font_color", Color(0.6, 0.5, 0.2))
+	container.add_child(left_arrow)
+	
 	var value_label = Label.new()
 	value_label.text = str(initial_value)
 	value_label.custom_minimum_size = Vector2(100, 0)
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	value_label.add_theme_font_size_override("font_size", 24)
 	value_label.add_theme_color_override("font_color", Color(0.9, 0.7, 0.2))
-	
-	var dec_btn = _make_small_button("<")
-	var inc_btn = _make_small_button(">")
-	
-	var current_value = initial_value
-	var callback_holder = {
-		"callback": Callable()
-	}
-	
-	dec_btn.pressed.connect(func():
-		current_value = max(min_val, current_value - step)
-		value_label.text = str(current_value)
-		if callback_holder.callback.is_valid():
-			callback_holder.callback.call(current_value)
-	)
-	
-	inc_btn.pressed.connect(func():
-		current_value = min(max_val, current_value + step)
-		value_label.text = str(current_value)
-		if callback_holder.callback.is_valid():
-			callback_holder.callback.call(current_value)
-	)
-	
-	container.add_child(dec_btn)
 	container.add_child(value_label)
-	container.add_child(inc_btn)
 	
-	return {
-		"container": container,
-		"callback_holder": callback_holder,
-		"dec_button": dec_btn,
-		"inc_button": inc_btn
-	}
+	var right_arrow = Label.new()
+	right_arrow.text = ">"
+	right_arrow.custom_minimum_size = Vector2(30, 0)
+	right_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	right_arrow.add_theme_font_size_override("font_size", 28)
+	right_arrow.add_theme_color_override("font_color", Color(0.6, 0.5, 0.2))
+	container.add_child(right_arrow)
+	
+	selector.container = container
+	selector.value_label = value_label
+	selector.left_arrow = left_arrow
+	selector.right_arrow = right_arrow
+	
+	return selector
 
-func _make_map_selector() -> HBoxContainer:
+func _make_map_selector() -> FocusableSelector:
+	var selector = FocusableSelector.new()
+	
 	var container = HBoxContainer.new()
 	container.add_theme_constant_override("separation", 15)
 	
@@ -260,32 +362,47 @@ func _make_map_selector() -> HBoxContainer:
 	lbl.add_theme_font_size_override("font_size", 20)
 	container.add_child(lbl)
 	
+	var left_arrow = Label.new()
+	left_arrow.text = "<"
+	left_arrow.custom_minimum_size = Vector2(30, 0)
+	left_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	left_arrow.add_theme_font_size_override("font_size", 28)
+	left_arrow.add_theme_color_override("font_color", Color(0.6, 0.5, 0.2))
+	container.add_child(left_arrow)
+	
 	var map_label = Label.new()
 	map_label.text = selected_map
-	map_label.custom_minimum_size = Vector2(100, 0)
+	map_label.custom_minimum_size = Vector2(150, 0)
 	map_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	map_label.add_theme_font_size_override("font_size", 24)
 	map_label.add_theme_color_override("font_color", Color(0.9, 0.7, 0.2))
-	
-	var dec_btn = _make_small_button("<")
-	dec_btn.pressed.connect(func():
-		current_map_index = (current_map_index - 1 + available_maps.size()) % available_maps.size()
-		selected_map = available_maps[current_map_index]
-		map_label.text = selected_map
-	)
-	
-	var inc_btn = _make_small_button(">")
-	inc_btn.pressed.connect(func():
-		current_map_index = (current_map_index + 1) % available_maps.size()
-		selected_map = available_maps[current_map_index]
-		map_label.text = selected_map
-	)
-	
-	container.add_child(dec_btn)
 	container.add_child(map_label)
-	container.add_child(inc_btn)
 	
-	return container
+	var right_arrow = Label.new()
+	right_arrow.text = ">"
+	right_arrow.custom_minimum_size = Vector2(30, 0)
+	right_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	right_arrow.add_theme_font_size_override("font_size", 28)
+	right_arrow.add_theme_color_override("font_color", Color(0.6, 0.5, 0.2))
+	container.add_child(right_arrow)
+	
+	selector.container = container
+	selector.value_label = map_label
+	selector.left_arrow = left_arrow
+	selector.right_arrow = right_arrow
+	selector.on_left = func(): _change_map(-1, selector)
+	selector.on_right = func(): _change_map(1, selector)
+	
+	return selector
+
+func _change_points(direction: int, selector: FocusableSelector) -> void:
+	selected_points = clamp(selected_points + direction, 5, 100)
+	selector.value_label.text = str(selected_points)
+
+func _change_map(direction: int, selector: FocusableSelector) -> void:
+	current_map_index = (current_map_index + direction + available_maps.size()) % available_maps.size()
+	selected_map = available_maps[current_map_index]
+	selector.value_label.text = selected_map
 
 # ==================== MULTIPLAYER LOBBY ====================
 
@@ -425,27 +542,6 @@ func _make_button(text: String, highlight: bool = false) -> Button:
 	
 	return btn
 
-func _make_small_button(text: String) -> Button:
-	var btn = Button.new()
-	btn.text = text
-	btn.custom_minimum_size = Vector2(50, 50)
-	btn.focus_mode = Control.FOCUS_ALL
-	
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.2, 0.2, 0.2, 0.8)
-	style.border_width_left = 2
-	style.border_width_right = 2
-	style.border_width_top = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(0.9, 0.7, 0.2)
-	
-	btn.add_theme_stylebox_override("normal", style)
-	btn.add_theme_stylebox_override("hover", style)
-	btn.add_theme_font_size_override("font_size", 20)
-	btn.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
-	
-	return btn
-
 # ==================== STATE MANAGEMENT ====================
 
 func _switch_to_state(new_state: MenuState) -> void:
@@ -456,30 +552,41 @@ func _switch_to_state(new_state: MenuState) -> void:
 	match_setup_container.visible = false
 	multiplayer_lobby_container.visible = false
 	
-	# Clear current buttons
-	current_buttons.clear()
+	# Clear current items
+	current_focusable_items.clear()
 	
-	# Show appropriate container and populate buttons
+	# Show appropriate container and populate items
 	match new_state:
 		MenuState.MAIN_MENU:
 			main_menu_container.visible = true
-			_populate_buttons(main_menu_container)
+			_populate_focusable_items(main_menu_container)
 		MenuState.MATCH_SETUP:
 			match_setup_container.visible = true
-			_populate_buttons(match_setup_container)
+			_populate_focusable_items(match_setup_container)
 		MenuState.MULTIPLAYER_LOBBY:
 			multiplayer_lobby_container.visible = true
-			_populate_buttons(multiplayer_lobby_container)
+			_populate_focusable_items(multiplayer_lobby_container)
 	
-	# Focus first button
+	# Focus first item
 	current_focus_index = 0
-	if not current_buttons.is_empty():
-		_update_button_focus()
+	if not current_focusable_items.is_empty():
+		_update_focus()
 
-func _populate_buttons(container: Node) -> void:
+func _populate_focusable_items(container: Node) -> void:
 	for child in _get_all_children(container):
 		if child is Button and child.visible:
-			current_buttons.append(child)
+			current_focusable_items.append(child)
+		elif child is HBoxContainer:
+			# Check if this is a selector container
+			var selector = _find_selector_for_container(child)
+			if selector:
+				current_focusable_items.append(selector)
+
+func _find_selector_for_container(container: HBoxContainer) -> FocusableSelector:
+	for selector in _all_selectors:
+		if selector.container == container:
+			return selector
+	return null
 
 func _get_all_children(node: Node) -> Array:
 	var children = []
@@ -509,7 +616,7 @@ func _start_local_match() -> void:
 	timer.start()
 	
 	timer.timeout.connect(func():
-		Game.start_match(selected_map, selected_player_count, selected_points)
+		Game.start_match(selected_map, 2, selected_points)  # Always 2 players for local
 		load_screen.queue_free()
 		queue_free()
 	)
@@ -561,10 +668,10 @@ func _on_lobby_connected() -> void:
 	lobby_buttons["start"].visible = is_leader
 	lobby_buttons["leave"].show()
 	
-	# Update button list for navigation
+	# Update items list for navigation
 	if current_state == MenuState.MULTIPLAYER_LOBBY:
-		_populate_buttons(multiplayer_lobby_container)
-		_update_button_focus()
+		_populate_focusable_items(multiplayer_lobby_container)
+		_update_focus()
 
 func _on_lobby_disconnected() -> void:
 	leader_label.hide()
@@ -577,10 +684,10 @@ func _on_lobby_disconnected() -> void:
 	lobby_buttons["start"].hide()
 	lobby_buttons["leave"].hide()
 	
-	# Update button list for navigation
+	# Update items list for navigation
 	if current_state == MenuState.MULTIPLAYER_LOBBY:
-		_populate_buttons(multiplayer_lobby_container)
-		_update_button_focus()
+		_populate_focusable_items(multiplayer_lobby_container)
+		_update_focus()
 
 func _on_room_code_updated() -> void:
 	if is_instance_valid(Multiplayer):

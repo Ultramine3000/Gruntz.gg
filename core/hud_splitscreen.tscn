@@ -1,7 +1,6 @@
-[gd_scene load_steps=17 format=3 uid="uid://bnjydn82lcvtv"]
+[gd_scene load_steps=16 format=3 uid="uid://bnjydn82lcvtv"]
 
 [ext_resource type="Script" uid="uid://cx2waf81771er" path="res://scripts/_hud.gd" id="1_xh14w"]
-[ext_resource type="Texture2D" uid="uid://dvv4253o8mga7" path="res://assets/textures/ui/crosshair.png" id="2_nbqjr"]
 [ext_resource type="Texture2D" uid="uid://d15tlq33gen8i" path="res://assets/textures/ui/health_icon.png" id="3_vv0im"]
 [ext_resource type="Texture2D" uid="uid://drj53crcwcvq3" path="res://assets/textures/ui/blood_overlay.png" id="4_1corf"]
 [ext_resource type="Texture2D" uid="uid://ggsmtdl0lfq1" path="res://assets/textures/ui/vignette.png" id="5_lbu8c"]
@@ -78,9 +77,8 @@ fill_to = Vector2(0, 0)
 
 [node name="hud" type="Control"]
 layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_right = 0.8333333
+anchor_bottom = 0.8348765
 offset_bottom = -450.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -90,20 +88,12 @@ script = ExtResource("1_xh14w")
 metadata/_edit_use_anchors_ = true
 
 [node name="border" type="Panel" parent="."]
-layout_mode = 0
-offset_right = 1600.0
-offset_bottom = 450.0
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 0.99600005
+offset_bottom = 0.14001465
 theme_override_styles/panel = SubResource("StyleBoxFlat_bw7k3")
-
-[node name="reticle" type="TextureRect" parent="."]
-visible = false
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 0
-offset_left = 784.0
-offset_top = 209.0
-offset_right = 816.0
-offset_bottom = 241.0
-texture = ExtResource("2_nbqjr")
 
 [node name="health" type="Control" parent="."]
 anchors_preset = 0
@@ -263,3 +253,39 @@ texture = SubResource("GradientTexture2D_f4txf")
 position = Vector2(-1377.24, 0.2503481)
 scale = Vector2(14.3852, 16.882824)
 texture = SubResource("GradientTexture2D_f4txf")
+
+[node name="pause_container" type="ColorRect" parent="."]
+z_index = -1
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 0.99600005
+offset_bottom = 0.14001465
+color = Color(0, 0, 0, 0)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="pause_container"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 633.3333
+offset_top = 179.16666
+offset_right = -616.66675
+offset_bottom = -77.50003
+
+[node name="resume_button" type="Button" parent="pause_container/VBoxContainer"]
+layout_mode = 2
+text = "RESUME"
+
+[node name="settings_button" type="Button" parent="pause_container/VBoxContainer"]
+layout_mode = 2
+text = "SETTINGS"
+
+[node name="quit_button" type="Button" parent="pause_container/VBoxContainer"]
+layout_mode = 2
+text = "END MATCH"
+
+[node name="reticle" type="Control" parent="."]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0

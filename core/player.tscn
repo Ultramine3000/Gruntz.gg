@@ -13049,8 +13049,7 @@ transform = Transform3D(440.266, 0, 0, 0, 440.266, 0, 0, 0, 440.266, -1.95517e-1
 transform = Transform3D(-9.31323e-09, -0.201005, -1.42172e-08, 0.201005, -1.95578e-08, 1.11759e-08, 4.65661e-10, 6.94126e-09, 0.201005, 0.0173226, -0.00770403, 0.00411948)
 visible = false
 light_color = Color(1, 0.647059, 0, 1)
-light_energy = 0.5
-omni_range = 0.4
+light_energy = 0.1
 
 [node name="MuzzlePlanes" type="GPUParticles3D" parent="body/body_rig/Armature/Skeleton3D/muzzle_flash/muzzle_flash"]
 transform = Transform3D(-0.3293553, 0.08145539, 0.022138432, 0.021275993, -0.0061838394, 0.3392773, 0.08168491, 0.33004054, 0.000893048, 0.020513773, 0.036042318, 0.0050217286)

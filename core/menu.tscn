@@ -1,7 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://dwgy71fyoxp3n"]
+[gd_scene load_steps=8 format=3 uid="uid://dwgy71fyoxp3n"]
 
 [ext_resource type="Script" uid="uid://bmq5pvsw4xyg" path="res://scripts/_menu.gd" id="1_wd2sg"]
+[ext_resource type="Texture2D" uid="uid://ujfx4ftunrtf" path="res://assets/meshes/Menu/controller_connected.png" id="2_ffj4i"]
 [ext_resource type="PackedScene" uid="uid://d4i7em6ocave8" path="res://core/menu_visual.tscn" id="2_grplm"]
+[ext_resource type="Texture2D" uid="uid://7fmmxu7wrjl4" path="res://assets/meshes/Menu/controller_not_found.png" id="3_grplm"]
 [ext_resource type="Texture2D" uid="uid://dbb6rb05cqh4o" path="res://assets/textures/HTML5_logo_and_wordmark.svg.png" id="4_wyrkb"]
 [ext_resource type="Texture2D" uid="uid://d0w0t68gudbvw" path="res://icon.svg" id="5_txbfy"]
 [ext_resource type="AudioStream" uid="uid://d01betlfqjv2x" path="res://assets/sfx/menu/dark-rituals-epic-cinematic-action-horror-music-254253.mp3" id="9_6yjyn"]
@@ -14,6 +16,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_wd2sg")
+controller_detected_texture = ExtResource("2_ffj4i")
+controller_not_detected_texture = ExtResource("3_grplm")
 
 [node name="background" type="SubViewportContainer" parent="."]
 custom_minimum_size = Vector2(1920, 1080)
