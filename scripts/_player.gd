@@ -568,12 +568,34 @@ func _anim_body_process(player_id):
 	var custom_blend := 0.2
 	var custom_speed := 1.0
 
-	# Animation speed settings
+	# Animation speed settings - updated with sprint animations
 	var animation_speeds = {
-		"PistolIdle": 1.0, "PistolMoveForward": 0.85, "PistolMoveLeft": 1.0, "PistolMoveRight": 1.0,
-		"PistolMoveBack": 0.85, "PistolJump": 1.0, "PistolSprint": 1.2,  # Keep sprint animation for body
-		"RifleIdle": 1.0, "RifleMoveForward": 0.9, "RifleMoveLeft": 1.45, "RifleMoveRight": 1.45,
-		"RifleMoveBack": 0.9, "RifleJump": 1.0, "RifleSprint": 1.2  # Keep sprint animation for body
+		"PistolIdle": 1.0, 
+		"PistolMoveForward": 0.85, 
+		"PistolMoveForwardLeft": 0.85,
+		"PistolMoveForwardRight": 0.85,
+		"PistolMoveLeft": 1.0, 
+		"PistolMoveRight": 1.0,
+		"PistolMoveBack": 0.85,
+		"PistolMoveBackLeft": 0.85,
+		"PistolMoveBackRight": 0.85,
+		"PistolJump": 1.0, 
+		"PistolSprint": 1.2,
+		"PistolSprintForwardLeft": 1.2,
+		"PistolSprintForwardRight": 1.2,
+		"RifleIdle": 1.0, 
+		"RifleMoveForward": 0.9,
+		"RifleMoveForwardLeft": 0.9,
+		"RifleMoveForwardRight": 0.9,
+		"RifleMoveLeft": 1.45, 
+		"RifleMoveRight": 1.45,
+		"RifleMoveBack": 0.9,
+		"RifleMoveBackLeft": 0.9,
+		"RifleMoveBackRight": 0.9,
+		"RifleJump": 1.0, 
+		"RifleSprint": 1.2,
+		"RifleSprintForwardLeft": 1.2,
+		"RifleSprintForwardRight": 1.2
 	}
 
 	# Don't update body animations while dead
@@ -593,7 +615,7 @@ func _anim_body_process(player_id):
 	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
 		controller_prefix = "p%d" % player_id
 
-	# Map player inputs to animations (removed sprint from animation_inputs)
+	# Map player inputs to animations
 	if is_multiplayer_authority():
 		animation_inputs = {
 			"walk_fw": Input.is_action_pressed(controller_prefix + "_walk_fw"),
@@ -606,18 +628,40 @@ func _anim_body_process(player_id):
 	# Handle jump
 	if animation_inputs["jump"] and not is_on_floor():
 		anim_to_play = "Jump"
-	# Handle sprint (only when moving forward) - keep body sprint animation
+	# Handle sprint with directional variants
 	elif is_sprinting and animation_inputs["walk_fw"]:
-		anim_to_play = "Sprint"
+		var left = animation_inputs["walk_lf"]
+		var right = animation_inputs["walk_rt"]
+		
+		if left:
+			anim_to_play = "SprintForwardLeft"
+		elif right:
+			anim_to_play = "SprintForwardRight"
+		else:
+			anim_to_play = "Sprint"
 	else:
-		# Movement logic
-		if animation_inputs["walk_fw"]:
+		# 8-directional movement logic
+		var forward = animation_inputs["walk_fw"]
+		var back = animation_inputs["walk_bk"]
+		var left = animation_inputs["walk_lf"]
+		var right = animation_inputs["walk_rt"]
+		
+		# Determine animation based on input combinations
+		if forward and left:
+			anim_to_play = "MoveForwardLeft"
+		elif forward and right:
+			anim_to_play = "MoveForwardRight"
+		elif forward:
 			anim_to_play = "MoveForward"
-		elif animation_inputs["walk_bk"]:
+		elif back and left:
+			anim_to_play = "MoveBackLeft"
+		elif back and right:
+			anim_to_play = "MoveBackRight"
+		elif back:
 			anim_to_play = "MoveBack"
-		elif animation_inputs["walk_lf"]:
+		elif left:
 			anim_to_play = "MoveLeft"
-		elif animation_inputs["walk_rt"]:
+		elif right:
 			anim_to_play = "MoveRight"
 		else:
 			anim_to_play = "Idle"
@@ -630,7 +674,7 @@ func _anim_body_process(player_id):
 
 	# Play the animation if it's different from the current one
 	if continue_player.current_animation != anim_to_play:
-		continue_player.play(anim_to_play, custom_blend, custom_speed)		
+		continue_player.play(anim_to_play, custom_blend, custom_speed)
 
 func jump():
 	if not is_on_floor():
@@ -687,12 +731,17 @@ func switch_weapon(update_only: bool = false) -> void:
 	for rig in arms_rig.get_children():
 		rig.hide()
 	
-	# Only access get_tree() if we're in the scene tree
-	if is_inside_tree():
-		for mesh in get_tree().get_nodes_in_group("body_weapon_mesh"):
-			if mesh.owner != self:
-				continue
-			mesh.hide()
+	# Hide all body weapon meshes under RightHand bone
+	if is_inside_tree() and skeleton:
+		var right_hand_bone_idx = skeleton.find_bone("mixamorig_RightHand")
+		if right_hand_bone_idx != -1:
+			for child in skeleton.get_children():
+				if child is BoneAttachment3D and child.bone_name == "mixamorig_RightHand":
+					# Hide all weapon meshes under RightHand (except muzzle_flash)
+					for weapon_mesh in child.get_children():
+						if weapon_mesh.name == "muzzle_flash":
+							continue  # Skip muzzle_flash
+						weapon_mesh.hide()
 	
 	# Safety check - ensure the weapon rig exists
 	if not arms_rig.has_node(current_weapon.name):
@@ -725,11 +774,19 @@ func switch_weapon(update_only: bool = false) -> void:
 	# Now show the new weapon's rig.
 	current_arm_rig.show()
 	
-	# Only access get_tree() if we're in the scene tree
-	if is_inside_tree():
-		for mesh in get_tree().get_nodes_in_group("body_weapon_mesh"):
-			if mesh.owner == self and mesh.name == current_weapon.name:
-				mesh.show()
+	# Show the corresponding weapon mesh under RightHand bone
+	if is_inside_tree() and skeleton:
+		var right_hand_bone_idx = skeleton.find_bone("mixamorig_RightHand")
+		if right_hand_bone_idx != -1:
+			for child in skeleton.get_children():
+				if child is BoneAttachment3D and child.bone_name == "mixamorig_RightHand":
+					# Show the weapon mesh that matches current_weapon.name
+					for weapon_mesh in child.get_children():
+						if weapon_mesh.name == "muzzle_flash":
+							continue  # Skip muzzle_flash
+						if weapon_mesh.name == current_weapon.name:
+							weapon_mesh.show()
+							print("Showing body weapon mesh: ", weapon_mesh.name)
 	
 	# Initialize weapon armature position for new weapon
 	if current_arm_rig.has_node("LVA4_Armature"):
@@ -1287,24 +1344,34 @@ var max_vertical_angle = 45
 var bonesmoothrot = 0.0
 
 func look_at_object(delta):
-	var neck_bone = skeleton.find_bone("mixamorig_Spine")
+	var spine_bone = skeleton.find_bone("mixamorig_Spine")
+	if spine_bone == -1:
+		print("Spine bone not found!")
+		return
+	
+	# Position the look_object marker directly based on camera rotation
+	# This makes it follow camera pitch
+	look_object.global_position = camera.global_position + camera.global_transform.basis.z * -2.0
+	
+	# Make spine look at the marker
 	spine.look_at(look_object.global_position, Vector3.UP, true)
-
-	var neck_rotation = skeleton.get_bone_pose_rotation(neck_bone)
-	var marker_rotation_degrees = spine.rotation_degrees
-
-	marker_rotation_degrees.x = clamp(marker_rotation_degrees.x, -max_vertical_angle, max_vertical_angle)
-	marker_rotation_degrees.y = clamp(marker_rotation_degrees.y, -max_horizontal_angle, max_horizontal_angle)
-
-	bonesmoothrot = lerp_angle(bonesmoothrot, deg_to_rad(marker_rotation_degrees.y), 2 * delta)
-
-	new_rotation = Quaternion.from_euler(Vector3(
-		deg_to_rad(marker_rotation_degrees.x), 
-		bonesmoothrot, 
-		-deg_to_rad(marker_rotation_degrees.x) # Make Z rotation negative of X
-	))
-
-	skeleton.set_bone_pose_rotation(neck_bone, new_rotation)
+	
+	# Get spine rotation and clamp it
+	var spine_rotation_degrees = spine.rotation_degrees
+	spine_rotation_degrees.x = clamp(spine_rotation_degrees.x, -max_vertical_angle, max_vertical_angle)
+	spine_rotation_degrees.y = clamp(spine_rotation_degrees.y, -max_horizontal_angle, max_horizontal_angle)
+	
+	# Smooth the rotation - INCREASED from 2 to 8 for faster response
+	bonesmoothrot = lerp_angle(bonesmoothrot, deg_to_rad(spine_rotation_degrees.x), 8 * delta)
+	
+	# Create simple rotation - just X axis
+	var new_rotation = Quaternion.from_euler(Vector3(bonesmoothrot, 0, 0))
+	
+	# Apply using pose override with LOWER blend amount so animation still works
+	var current_pose = skeleton.get_bone_global_pose(spine_bone)
+	current_pose.basis = Basis(new_rotation) * current_pose.basis.orthonormalized()
+	
+	skeleton.set_bone_global_pose_override(spine_bone, current_pose, 0.5, true)
 
 @rpc("any_peer", "call_remote", "unreliable")
 func sync_health(value: int):
