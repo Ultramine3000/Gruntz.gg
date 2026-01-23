@@ -13,7 +13,6 @@ extends Node3D
 @export var is_sniper: bool = false  # Check this box for sniper weapons
 @export var scope_transition_delay := 0.15  # Delay before showing scope (to sync with weapon movement)
 
-
 ## RECOIL SETTINGS ##
 @export_category("Recoil Settings")
 @export var recoil_enabled := true  # Master toggle for all recoil
@@ -43,59 +42,65 @@ extends Node3D
 @export var sprint_rotation: Vector3 = Vector3(-10, 5, -15)  # Rotation offset when sprinting (degrees)
 @export_range(0.0, 1.0) var sprint_transition_speed := 8.0  # How quickly sprint animation blends in/out
 
-## PLAYER INPUT RESPONSE SETTINGS ##
-@export_category("Input Response Settings")
-@export_range(0.0, 10.0) var input_response_strength := 2.0  # How much the weapon responds to input
-@export_range(0.0, 1.0) var input_smoothing := 0.05  # How quickly input response changes (lower = smoother)
-@export_range(0.0, 1.0) var ads_reduction_factor := 0.1  # Multiply strength by this when ADS (10x reduction)
+## CS:GO-STYLE INPUT RESPONSE SETTINGS ##
+@export_category("CS:GO Input Response")
+@export_range(0.0, 5.0) var look_lag_amount := 1.2  # How much the weapon lags behind camera (CS:GO feel)
+@export_range(0.0, 30.0) var look_lag_speed := 15.0  # Speed of lag catchup (higher = snappier, CS:GO ~12-15)
+@export_range(0.0, 3.0) var look_tilt_amount := 0.6  # Side tilt when turning (subtle CS:GO roll)
+@export_range(0.0, 30.0) var look_tilt_speed := 12.0  # Speed of tilt response
+@export_range(0.0, 1.0) var ads_sway_multiplier := 0.15  # Reduce sway when ADS (85% reduction)
+@export_range(0.0, 1.0) var sprint_sway_multiplier := 0.4  # Reduce sway when sprinting
+@export_range(0.0, 0.01) var mouse_sensitivity_scale := 0.0015  # Mouse sensitivity multiplier
+@export_range(0.0, 1.0) var mouse_smoothing := 0.25  # Mouse movement smoothing (higher = smoother but more lag)
 
 ## INTERNAL VARIABLES ##
 var is_ads: bool = false
 var is_sprinting: bool = false
 var tween: Tween
-var starting_position: Vector3  # The original position when scene loads
-var starting_rotation: Vector3  # The original rotation when scene loads
+var starting_position: Vector3
+var starting_rotation: Vector3
 
-# Figure-8 and input response variables
+# Figure-8 sway
 var time_elapsed := 0.0
-var current_input_offset := Vector3.ZERO
-var target_input_offset := Vector3.ZERO
-var player_reference : Player  # Reference to the parent player
+var player_reference : Player
 
-# Sprint animation variables
+# CS:GO-style input tracking
+var look_input_velocity := Vector2.ZERO  # Current camera movement velocity
+var smoothed_look_velocity := Vector2.ZERO  # Smoothed version for mouse
+var weapon_lag_rotation := Vector3.ZERO  # Weapon lag behind camera
+var weapon_tilt_rotation := Vector3.ZERO  # Banking/tilt when turning
+var last_look_input := Vector2.ZERO
+
+# Sprint animation
 var current_sprint_intensity := 0.0
 var target_sprint_intensity := 0.0
 var current_sprint_position_offset := Vector3.ZERO
 var current_sprint_rotation_offset := Vector3.ZERO
 
-# Recoil variables
+# Recoil
 var current_recoil_position := Vector3.ZERO
 var target_recoil_position := Vector3.ZERO
 var current_recoil_rotation := Vector3.ZERO
 var target_recoil_rotation := Vector3.ZERO
 
-# Scope variables
+# Scope
 var scope_node: Node = null
-var scope_recoil_offset := Vector2.ZERO  # Current offset for scope recoil
-var scope_recoil_velocity := Vector2.ZERO  # Velocity for scope movement
-var scope_original_position := Vector2.ZERO  # Store original scope position
+var scope_recoil_offset := Vector2.ZERO
+var scope_recoil_velocity := Vector2.ZERO
+var scope_original_position := Vector2.ZERO
 
 func _ready():
 	print("ADS Script _ready() called")
 	
-	# Store the starting position and rotation
 	starting_position = transform.origin
 	starting_rotation = rotation_degrees
 	print("Starting position: ", starting_position)
 	
-	# Find the parent player
 	_find_parent_player()
 	print("Player reference found: ", player_reference)
 	
-	# Initialize scope reference
 	_initialize_scope()
 	
-	# Move to idle position immediately on scene load
 	var idle_pos = starting_position + idle_position
 	transform.origin = idle_pos
 	print("ADS Script initialization complete")
@@ -122,10 +127,8 @@ func _initialize_scope():
 		if player_reference.hud.has_node("scope"):
 			scope_node = player_reference.hud.get_node("scope")
 			print("ADS Script: Scope node found: ", scope_node)
-			# Make sure scope starts hidden
 			if scope_node:
 				scope_node.visible = false
-				# Store original position
 				if scope_node is Control:
 					scope_original_position = scope_node.position
 				print("ADS Script: Scope node visibility set to false")
@@ -139,251 +142,217 @@ func _initialize_scope():
 func _process(delta: float):
 	time_elapsed += delta * rotation_speed
 	
-	# Update sprint state
 	_update_sprint_state(delta)
-	
-	# Update input response
-	_update_input_response(delta)
-	
-	# Update recoil recovery
+	_update_csgo_weapon_sway(delta)
 	_update_recoil_recovery(delta)
-	
-	# Update scope recoil (if scope is active)
 	_update_scope_recoil(delta)
 	
 	# Create base figure-8 pattern (reduced when sprinting)
-	var figure8_intensity = 1.0 - (current_sprint_intensity * 0.8)  # Reduce figure-8 when sprinting
+	var figure8_intensity = 1.0 - (current_sprint_intensity * 0.8)
 	var horizontal_sway = sin(time_elapsed) * horizontal_amplitude * figure8_intensity
 	var vertical_sway = sin(time_elapsed * 2.0) * vertical_amplitude * figure8_intensity
 	var roll_sway = sin(time_elapsed * 0.5) * roll_amplitude * figure8_intensity
 	
-	# Base figure-8 rotation
 	var figure8_rotation = Vector3(
-		vertical_sway,    # X-axis (pitch)
-		horizontal_sway,  # Y-axis (yaw) 
-		roll_sway        # Z-axis (roll)
+		vertical_sway,
+		horizontal_sway,
+		roll_sway
 	)
 	
-	# Apply the subtle rotations plus input response plus sprint animation to the starting rotation
-	rotation_degrees = starting_rotation + figure8_rotation + current_input_offset + current_sprint_rotation_offset
+	# Combine: base + figure-8 + CS:GO lag + tilt + sprint
+	rotation_degrees = starting_rotation + figure8_rotation + weapon_lag_rotation + weapon_tilt_rotation + current_sprint_rotation_offset
 	
-	# ADDITIONALLY apply recoil rotation on top of everything else
-	rotation_degrees.x += current_recoil_rotation.x  # Vertical recoil
-	rotation_degrees.y += current_recoil_rotation.y  # Horizontal recoil
+	# Add recoil on top
+	rotation_degrees.x += current_recoil_rotation.x
+	rotation_degrees.y += current_recoil_rotation.y
 	
-	# Update position with sprint and recoil
 	_update_position_with_sprint_and_recoil()
 
+func _update_csgo_weapon_sway(delta: float):
+	"""CS:GO-style weapon lag and tilt - smooth, realistic, weighted feel"""
+	if player_reference == null:
+		return
+	
+	# Don't process when paused
+	if player_reference.hud and player_reference.hud.is_paused:
+		weapon_lag_rotation = weapon_lag_rotation.lerp(Vector3.ZERO, look_lag_speed * delta)
+		weapon_tilt_rotation = weapon_tilt_rotation.lerp(Vector3.ZERO, look_tilt_speed * delta)
+		look_input_velocity = Vector2.ZERO
+		smoothed_look_velocity = Vector2.ZERO
+		return
+	
+	# Get raw camera input
+	var horizontal_input := 0.0
+	var vertical_input := 0.0
+	
+	if player_ctrl_port == 0:
+		# Player 1: controller + mouse
+		horizontal_input = Input.get_axis("p0_cam_lf", "p0_cam_rt")
+		vertical_input = Input.get_axis("p0_cam_dn", "p0_cam_up")
+		
+		# Add mouse input with smoothing
+		var mouse_motion = Input.get_last_mouse_velocity()
+		horizontal_input += mouse_motion.x * mouse_sensitivity_scale
+		vertical_input += mouse_motion.y * mouse_sensitivity_scale
+	else:
+		# Other players: controller only
+		horizontal_input = Input.get_axis("p" + str(player_ctrl_port) + "_cam_lf", "p" + str(player_ctrl_port) + "_cam_rt")
+		vertical_input = Input.get_axis("p" + str(player_ctrl_port) + "_cam_dn", "p" + str(player_ctrl_port) + "_cam_up")
+	
+	var current_look_input = Vector2(horizontal_input, vertical_input)
+	
+	# RAW velocity (for immediate response)
+	look_input_velocity = current_look_input
+	
+	# SMOOTHED velocity (for weapon sway calculations)
+	# This prevents choppy mouse movement from causing jittery weapon sway
+	smoothed_look_velocity = smoothed_look_velocity.lerp(look_input_velocity, mouse_smoothing)
+	
+	# Calculate state-based multiplier
+	var sway_multiplier = 1.0
+	if player_reference.is_aiming:
+		sway_multiplier = ads_sway_multiplier
+	elif current_sprint_intensity > 0.01:
+		sway_multiplier = lerp(1.0, sprint_sway_multiplier, current_sprint_intensity)
+	
+	# === WEAPON LAG (CS:GO inertia effect) ===
+	# Use SMOOTHED velocity for weapon calculations to prevent choppy mouse movement
+	var target_lag = Vector3(
+		-smoothed_look_velocity.y * look_lag_amount * sway_multiplier,  # Pitch opposite to vertical look
+		-smoothed_look_velocity.x * look_lag_amount * sway_multiplier,  # Yaw opposite to horizontal look
+		0.0
+	)
+	
+	# Spring-like interpolation for smooth lag
+	weapon_lag_rotation = weapon_lag_rotation.lerp(target_lag, look_lag_speed * delta)
+	
+	# === WEAPON TILT (CS:GO banking effect) ===
+	# Use SMOOTHED velocity here too
+	var target_tilt = Vector3(
+		0.0,
+		0.0,
+		smoothed_look_velocity.x * look_tilt_amount * sway_multiplier  # Roll with horizontal movement
+	)
+	
+	weapon_tilt_rotation = weapon_tilt_rotation.lerp(target_tilt, look_tilt_speed * delta)
+	
+	last_look_input = current_look_input
+	
+	# Clamp to prevent extreme values
+	weapon_lag_rotation.x = clamp(weapon_lag_rotation.x, -look_lag_amount * 3.0, look_lag_amount * 3.0)
+	weapon_lag_rotation.y = clamp(weapon_lag_rotation.y, -look_lag_amount * 3.0, look_lag_amount * 3.0)
+	weapon_tilt_rotation.z = clamp(weapon_tilt_rotation.z, -look_tilt_amount * 3.0, look_tilt_amount * 3.0)
+
 func _update_scope_recoil(delta: float):
-	# Only process scope recoil if scope is visible
 	if not scope_node or not scope_node.visible or not scope_node is Control:
 		return
 	
-	# Apply spring physics to scope recoil
-	# Calculate force towards center (spring force)
 	var spring_force = -scope_recoil_offset * scope_recoil_recovery
-	
-	# Add damping to prevent endless oscillation
 	var damping_force = -scope_recoil_velocity * (1.0 - scope_recoil_damping) * 10.0
 	
-	# Update velocity
 	scope_recoil_velocity += (spring_force + damping_force) * delta
-	
-	# Update position
 	scope_recoil_offset += scope_recoil_velocity * delta
 	
-	# Apply the offset to the scope position
 	scope_node.position = scope_original_position + scope_recoil_offset
 	
-	# Once settled enough, snap to zero to prevent floating point drift
 	if scope_recoil_offset.length() < 0.5 and scope_recoil_velocity.length() < 1.0:
 		scope_recoil_offset = Vector2.ZERO
 		scope_recoil_velocity = Vector2.ZERO
 		scope_node.position = scope_original_position
 
 func apply_scope_recoil():
-	"""Call this function when the weapon fires while scoped to create scope recoil effect"""
 	if not is_sniper or not is_ads or not scope_node or not scope_node.visible:
 		return
 	
-	# Add upward kick with random horizontal sway
 	var horizontal_variation = randf_range(-scope_recoil_sway, scope_recoil_sway)
 	
-	# Add to velocity for more dynamic, physics-based movement
 	scope_recoil_velocity += Vector2(
-		horizontal_variation,  # X: Random left/right sway
-		-scope_recoil_kick      # Y: Upward kick (negative because up is negative in screen space)
+		horizontal_variation,
+		-scope_recoil_kick
 	)
 	
 	print("Scope recoil applied - velocity: ", scope_recoil_velocity)
 
 func _update_recoil_recovery(delta: float):
-	# Smoothly recover recoil back to zero
 	current_recoil_position = current_recoil_position.lerp(Vector3.ZERO, recoil_recovery_speed * delta)
 	current_recoil_rotation = current_recoil_rotation.lerp(Vector3.ZERO, recoil_recovery_speed * delta)
 	
-	# Once close enough, snap to zero to prevent floating point drift
 	if current_recoil_position.length() < 0.0001:
 		current_recoil_position = Vector3.ZERO
 	if current_recoil_rotation.length() < 0.01:
 		current_recoil_rotation = Vector3.ZERO
 
 func apply_recoil():
-	# Check if recoil is enabled
 	if not recoil_enabled:
 		return
 	
-	# Apply scope recoil if scoped in with a sniper
 	apply_scope_recoil()
 	
-	# Calculate recoil multiplier based on ADS state
 	var multiplier = recoil_ads_multiplier if is_ads else 1.0
 	
-	# ADD recoil incrementally (accumulates with each shot)
 	current_recoil_position += Vector3(
-		0.0,  # X: No horizontal position kick
-		0.0,  # Y: No vertical position movement
-		recoil_kick_amount * multiplier  # Z: Kick back
+		0.0,
+		0.0,
+		recoil_kick_amount * multiplier
 	)
 	
-	# ADD rotation recoil incrementally (accumulates with each shot)
-	var pitch_variation = randf_range(0.9, 1.1)  # +/- 10% variation on vertical
-	var yaw_variation = randf_range(-recoil_horizontal_intensity, recoil_horizontal_intensity)  # Use slider value
+	var pitch_variation = randf_range(0.9, 1.1)
+	var yaw_variation = randf_range(-recoil_horizontal_intensity, recoil_horizontal_intensity)
 	
 	current_recoil_rotation += Vector3(
-		recoil_rotation_pitch * multiplier * pitch_variation,  # X: Incrementally pitch up
-		yaw_variation * multiplier,  # Y: Random horizontal rotation (left/right)
-		0.0  # Z: No roll
+		recoil_rotation_pitch * multiplier * pitch_variation,
+		yaw_variation * multiplier,
+		0.0
 	)
 
 func _update_sprint_state(delta: float):
-	# Check if player is sprinting
 	if player_reference:
 		target_sprint_intensity = 1.0 if player_reference.is_sprinting else 0.0
 	else:
 		target_sprint_intensity = 0.0
 	
-	# Smoothly transition sprint intensity
 	current_sprint_intensity = lerp(current_sprint_intensity, target_sprint_intensity, sprint_transition_speed * delta)
 	
-	# Apply sprint position and rotation offsets
 	current_sprint_position_offset = sprint_position * current_sprint_intensity
 	current_sprint_rotation_offset = sprint_rotation * current_sprint_intensity
 
 func _update_position_with_sprint_and_recoil():
 	var target_pos: Vector3
 	
-	# Determine base position based on ADS state
 	if is_ads:
 		target_pos = starting_position + ads_position
 	else:
 		target_pos = starting_position + idle_position
 	
-	# Add sprint position offset
 	target_pos += current_sprint_position_offset
-	
-	# Add recoil position offset
 	target_pos += current_recoil_position
 	
-	# Apply position with smooth transition
 	if use_animation and not is_equal_approx(transform.origin.distance_to(target_pos), 0.0):
 		animate_to_position(target_pos)
 	else:
 		transform.origin = target_pos
 
-func _update_input_response(delta: float):
-	if player_reference == null:
-		return
-	
-	# Don't process input when paused
-	if player_reference.hud and player_reference.hud.is_paused:
-		# Smoothly return to neutral position when paused
-		current_input_offset = current_input_offset.lerp(Vector3.ZERO, input_smoothing * 2.0)
-		return
-	
-	# Calculate target offset based on input
-	target_input_offset = Vector3.ZERO
-	
-	# Get current response strength (reduced when ADS or sprinting)
-	var current_strength = input_response_strength
-	if player_reference.is_aiming:
-		current_strength *= ads_reduction_factor  # 10x reduction when aiming
-	elif current_sprint_intensity > 0.01:
-		current_strength *= 0.3  # Reduce input response when sprinting
-	
-	# Get input values based on player type
-	var horizontal_input := 0.0
-	var vertical_input := 0.0
-	
-	if player_ctrl_port == 0:
-		# Player 1 uses both mouse and controller
-		# Controller input
-		horizontal_input = -Input.get_axis("p0_cam_lf", "p0_cam_rt")
-		vertical_input = Input.get_axis("p0_cam_dn", "p0_cam_up")
-		
-		# Add mouse input for Player 1 (scaled down more for smoothness)
-		var mouse_motion = Input.get_last_mouse_velocity()
-		horizontal_input += -mouse_motion.x * 0.0005  # Even smaller mouse sensitivity
-		vertical_input += -mouse_motion.y * 0.0005
-	else:
-		# Other players use only controller
-		horizontal_input = -Input.get_axis("p" + str(player_ctrl_port) + "_cam_lf", "p" + str(player_ctrl_port) + "_cam_rt")
-		vertical_input = Input.get_axis("p" + str(player_ctrl_port) + "_cam_dn", "p" + str(player_ctrl_port) + "_cam_up")
-	
-	# Apply input response (opposite direction for realistic weapon movement)
-	# Only apply X (pitch) and Y (yaw) rotation - no Z (roll) rotation
-	if abs(horizontal_input) > 0.005:  # Smaller deadzone for smoother response
-		if horizontal_input > 0:  # Looking right
-			target_input_offset.y += current_strength * 0.3  # Yaw right
-		else:  # Looking left
-			target_input_offset.y -= current_strength * 0.3  # Yaw left
-	
-	if abs(vertical_input) > 0.005:  # Smaller deadzone
-		if vertical_input > 0:  # Looking up
-			target_input_offset.x -= current_strength * 0.5  # Pitch down
-		else:  # Looking down
-			target_input_offset.x += current_strength * 0.5  # Pitch up
-	
-	# Much smoother interpolation with adaptive speed based on ADS
-	var lerp_speed = input_smoothing
-	if player_reference.is_aiming:
-		lerp_speed *= 0.5  # Even smoother when aiming
-	elif current_sprint_intensity > 0.01:
-		lerp_speed *= 2.0  # Faster response when sprinting for more dynamic feel
-	
-	current_input_offset = current_input_offset.lerp(target_input_offset, lerp_speed)
-	
-	# Clamp the offset to prevent extreme rotations
-	current_input_offset.x = clamp(current_input_offset.x, -current_strength * 1.5, current_strength * 1.5)
-	current_input_offset.y = clamp(current_input_offset.y, -current_strength * 0.8, current_strength * 0.8)
-	current_input_offset.z = clamp(current_input_offset.z, -current_strength * 1.5, current_strength * 1.5)
-
 ## SCOPE MANAGEMENT FUNCTIONS ##
 func _show_scope():
 	print("ADS Script: _show_scope called - scope_node: ", scope_node, " is_sniper: ", is_sniper)
 	
-	# Try to initialize scope if we don't have it yet
 	if scope_node == null:
 		print("ADS Script: Scope node is null, attempting to initialize...")
 		_initialize_scope()
 	
 	if scope_node and is_sniper:
 		print("ADS Script: Conditions met, waiting for delay...")
-		# Add a slight delay to sync with weapon movement
 		await get_tree().create_timer(scope_transition_delay).timeout
-		# Double-check we're still in ADS mode
 		print("ADS Script: After delay - is_ads: ", is_ads, " is_sniper: ", is_sniper)
 		if is_ads and is_sniper:
 			scope_node.visible = true
 			print("ADS Script: Scope visibility set to TRUE")
 			
-			# Reset scope recoil state when showing scope
 			scope_recoil_offset = Vector2.ZERO
 			scope_recoil_velocity = Vector2.ZERO
 			if scope_node is Control:
 				scope_node.position = scope_original_position
 			
-			# Hide weapon after scope is shown
 			_hide_weapon()
 		else:
 			print("ADS Script: Conditions no longer met after delay")
@@ -393,18 +362,15 @@ func _show_scope():
 func _hide_scope():
 	print("ADS Script: _hide_scope called - scope_node: ", scope_node)
 	
-	# Show weapon immediately when exiting ADS
 	if is_sniper:
 		_show_weapon()
 	
-	# Try to initialize scope if we don't have it yet
 	if scope_node == null:
 		print("ADS Script: Scope node is null, attempting to initialize...")
 		_initialize_scope()
 	
 	if scope_node:
 		scope_node.visible = false
-		# Reset scope position when hiding
 		scope_recoil_offset = Vector2.ZERO
 		scope_recoil_velocity = Vector2.ZERO
 		if scope_node is Control:
@@ -414,16 +380,14 @@ func _hide_scope():
 ## WEAPON VISIBILITY FUNCTIONS ##
 func _hide_weapon():
 	print("ADS Script: Hiding weapon model")
-	# Hide the entire parent weapon node (the weapon rig)
-	var weapon_node = get_parent()  # This should be the weapon rig (Kar98, AKS74, etc.)
+	var weapon_node = get_parent()
 	if weapon_node:
 		weapon_node.visible = false
 		print("ADS Script: Weapon hidden: ", weapon_node.name)
 
 func _show_weapon():
 	print("ADS Script: Showing weapon model")
-	# Show the entire parent weapon node (the weapon rig)
-	var weapon_node = get_parent()  # This should be the weapon rig (Kar98, AKS74, etc.)
+	var weapon_node = get_parent()
 	if weapon_node:
 		weapon_node.visible = true
 		print("ADS Script: Weapon shown: ", weapon_node.name)
@@ -441,15 +405,12 @@ func set_p0_ads(value: bool):
 	is_ads = value
 	print("ADS Script: set_p0_ads called with value: ", value, " (was_ads: ", was_ads, ")")
 	
-	# Handle scope visibility for sniper weapons
 	if is_sniper:
 		print("ADS Script: This is a sniper weapon")
 		if is_ads and not was_ads:
-			# Starting ADS transition - show scope after delay
 			print("ADS Script: Starting ADS transition - calling _show_scope()")
 			_show_scope()
 		elif not is_ads and was_ads:
-			# Starting transition back to idle - hide scope immediately
 			print("ADS Script: Starting transition back to idle - calling _hide_scope()")
 			_hide_scope()
 	else:
@@ -461,7 +422,6 @@ func set_p1_ads(value: bool):
 	pass
 
 func update_position():
-	# Position update is now handled in _update_position_with_sprint_and_recoil()
 	pass
 
 func animate_to_position(pos: Vector3):
@@ -471,7 +431,6 @@ func animate_to_position(pos: Vector3):
 	tween = create_tween()
 	tween.tween_property(self, "transform:origin", pos, animation_duration)
 
-# Test functions
 func test_ads():
 	set_p0_ads(true)
 
@@ -491,5 +450,9 @@ func reset_to_starting():
 	target_recoil_rotation = Vector3.ZERO
 	scope_recoil_offset = Vector2.ZERO
 	scope_recoil_velocity = Vector2.ZERO
-	# Make sure scope is hidden when resetting
+	weapon_lag_rotation = Vector3.ZERO
+	weapon_tilt_rotation = Vector3.ZERO
+	look_input_velocity = Vector2.ZERO
+	smoothed_look_velocity = Vector2.ZERO
+	last_look_input = Vector2.ZERO
 	_hide_scope()

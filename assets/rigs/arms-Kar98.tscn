@@ -781,6 +781,23 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_aks68")
 
+[sub_resource type="Animation" id="Animation_8lwed"]
+length = 0.001
+tracks/0/type = "position_3d"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("LVA4_Armature/Skeleton3D:stripper clip bullets")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0)
+tracks/1/type = "position_3d"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("LVA4_Armature/Skeleton3D:stripper clip")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = PackedFloat32Array(0, 1, 0, 0, 0)
+
 [sub_resource type="Animation" id="Animation_t6m3j"]
 resource_name = "draw"
 length = 1.16667
@@ -6237,23 +6254,6 @@ tracks/85/interp = 0
 tracks/85/loop_wrap = true
 tracks/85/keys = PackedFloat32Array(0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id="Animation_8lwed"]
-length = 0.001
-tracks/0/type = "position_3d"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("LVA4_Armature/Skeleton3D:stripper clip bullets")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0)
-tracks/1/type = "position_3d"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("LVA4_Armature/Skeleton3D:stripper clip")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = PackedFloat32Array(0, 1, 0, 0, 0)
-
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_ormtd"]
 _data = {
 &"RESET": SubResource("Animation_8lwed"),
@@ -6284,8 +6284,6 @@ animation_duration = 0.1
 is_sniper = true
 recoil_enabled = false
 recoil_rotation_pitch = 0.0
-horizontal_amplitude = 0.01
-vertical_amplitude = 0.01
 sprint_position = Vector3(-0.035, 0, 0)
 sprint_rotation = Vector3(-10, 7, 15)
 
