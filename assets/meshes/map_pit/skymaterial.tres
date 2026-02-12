@@ -1,0 +1,33 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://bqkf03b5ewsr3"]
+
+[ext_resource type="Shader" uid="uid://b2hmftm35g5bh" path="res://assets/meshes/map_pit/sky.gdshader" id="1_6i50e"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_6i50e")
+shader_parameter/current_time = 0.035
+shader_parameter/sun_rise_angle = 257.9430122522925
+shader_parameter/sun_tilt = 0.2
+shader_parameter/day_horizon_color = Color(0.5, 0.7, 0.9, 1)
+shader_parameter/day_zenith_color = Color(0.3, 0.5, 0.9, 1)
+shader_parameter/day_ground_color = Color(0.4, 0.3, 0.2, 1)
+shader_parameter/sunset_horizon_color = Color(0.8, 0.5, 0.3, 1)
+shader_parameter/sunset_zenith_color = Color(0.6, 0.4, 0.6, 1)
+shader_parameter/night_horizon_color = Color(0.1, 0.1, 0.2, 1)
+shader_parameter/night_zenith_color = Color(0.05, 0.05, 0.15, 1)
+shader_parameter/night_ground_color = Color(0.05, 0.05, 0.05, 1)
+shader_parameter/storm_horizon_color = Color(0.2, 0.2, 0.25, 1)
+shader_parameter/storm_zenith_color = Color(0.15, 0.15, 0.2, 1)
+shader_parameter/storm_ground_color = Color(0.1, 0.1, 0.12, 1)
+shader_parameter/sun_color = Color(1, 0.9, 0.7, 1)
+shader_parameter/sun_size = 0.014000000665
+shader_parameter/sun_sharpness = 10.0
+shader_parameter/enable_lens_flare = true
+shader_parameter/flare_intensity = 0.2090000099275
+shader_parameter/flare_color = Color(1, 0.8, 0.6, 1)
+shader_parameter/show_stars = true
+shader_parameter/star_size = 0.005
+shader_parameter/star_brightness = 1.0
+shader_parameter/storm_active = false
+shader_parameter/storm_intensity = 1.0
+shader_parameter/lightning_flash = 0.0

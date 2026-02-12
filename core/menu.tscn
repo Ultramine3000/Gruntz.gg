@@ -1,12 +1,17 @@
-[gd_scene load_steps=8 format=3 uid="uid://dwgy71fyoxp3n"]
+[gd_scene load_steps=13 format=3 uid="uid://dwgy71fyoxp3n"]
 
 [ext_resource type="Script" uid="uid://bmq5pvsw4xyg" path="res://scripts/_menu.gd" id="1_wd2sg"]
-[ext_resource type="Texture2D" uid="uid://ujfx4ftunrtf" path="res://assets/meshes/Menu/controller_connected.png" id="2_ffj4i"]
+[ext_resource type="Script" uid="uid://cwceyqimjut8o" path="res://scripts/class-weapon.gd" id="2_4oiyn"]
+[ext_resource type="Texture2D" uid="uid://csavj55boai8r" path="res://assets/meshes/menu/controller_connected.png" id="2_ffj4i"]
 [ext_resource type="PackedScene" uid="uid://d4i7em6ocave8" path="res://core/menu_visual.tscn" id="2_grplm"]
-[ext_resource type="Texture2D" uid="uid://7fmmxu7wrjl4" path="res://assets/meshes/Menu/controller_not_found.png" id="3_grplm"]
+[ext_resource type="Texture2D" uid="uid://cydhwqqteiwe6" path="res://assets/meshes/menu/controller_not_connected.png" id="3_ffj4i"]
+[ext_resource type="Resource" uid="uid://bx42dgst4c4fy" path="res://assets/weapons/AKS74.tres" id="3_kgx2x"]
+[ext_resource type="Resource" uid="uid://dquo5pg6at53p" path="res://assets/weapons/Kar98.tres" id="4_ee0v4"]
 [ext_resource type="Texture2D" uid="uid://dbb6rb05cqh4o" path="res://assets/textures/HTML5_logo_and_wordmark.svg.png" id="4_wyrkb"]
+[ext_resource type="Resource" uid="uid://b1un2a15q5vl7" path="res://assets/weapons/TarusJudge.tres" id="5_8ah6k"]
+[ext_resource type="AudioStream" uid="uid://4qqycaieat1f" path="res://assets/sfx/menu/Groves.mp3" id="5_ffj4i"]
 [ext_resource type="Texture2D" uid="uid://d0w0t68gudbvw" path="res://icon.svg" id="5_txbfy"]
-[ext_resource type="AudioStream" uid="uid://d01betlfqjv2x" path="res://assets/sfx/menu/dark-rituals-epic-cinematic-action-horror-music-254253.mp3" id="9_6yjyn"]
+[ext_resource type="Texture2D" uid="uid://ggsmtdl0lfq1" path="res://assets/textures/ui/vignette.png" id="6_grplm"]
 
 [node name="menu" type="Control"]
 layout_mode = 3
@@ -16,8 +21,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_wd2sg")
+available_primary_weapons = Array[ExtResource("2_4oiyn")]([ExtResource("3_kgx2x"), ExtResource("4_ee0v4")])
+available_secondary_weapons = Array[ExtResource("2_4oiyn")]([ExtResource("5_8ah6k")])
 controller_detected_texture = ExtResource("2_ffj4i")
-controller_not_detected_texture = ExtResource("3_grplm")
+controller_not_detected_texture = ExtResource("3_ffj4i")
 
 [node name="background" type="SubViewportContainer" parent="."]
 custom_minimum_size = Vector2(1920, 1080)
@@ -36,17 +43,25 @@ render_target_update_mode = 4
 [node name="menu" parent="background/viewport" instance=ExtResource("2_grplm")]
 
 [node name="Camera3D3" type="Camera3D" parent="background/viewport/menu"]
-transform = Transform3D(-0.8428377, 0, -0.53816783, 0, 1, 0, 0.53816783, 0, -0.8428377, -62.042274, 8.54683, 8.2806)
-projection = 1
+transform = Transform3D(-0.842838, 0, -0.538168, 0, 1, 0, 0.538168, 0, -0.842838, -23.6502, 8.54683, -36.1019)
 current = true
-fov = 60.6
+fov = 24.2
 size = 1.472
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("9_6yjyn")
+stream = ExtResource("5_ffj4i")
 volume_db = -15.261
 autoplay = true
 parameters/looping = true
+
+[node name="shoot_indicator" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = -464.0
+offset_top = -1074.0
+offset_right = 3509.0
+offset_bottom = 2379.0
+texture = ExtResource("6_grplm")
+expand_mode = 1
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 0
@@ -54,7 +69,7 @@ offset_left = 8.0
 offset_top = 1052.0
 offset_right = 106.0
 offset_bottom = 1075.0
-text = "version 0.1.11"
+text = "version 0.1.21"
 
 [node name="Html5LogoAndWordmark_svg" type="Sprite2D" parent="."]
 texture_filter = 1

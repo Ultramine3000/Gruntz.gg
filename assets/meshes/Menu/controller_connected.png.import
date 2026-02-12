@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ujfx4ftunrtf"
-path="res://.godot/imported/controller_connected.png-a93614e0bd4c7dfd23b68f5f484db606.ctex"
+uid="uid://csavj55boai8r"
+path="res://.godot/imported/controller_connected.png-9237022e5227a61ec05272b33ac5bf4e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/meshes/Menu/controller_connected.png"
-dest_files=["res://.godot/imported/controller_connected.png-a93614e0bd4c7dfd23b68f5f484db606.ctex"]
+source_file="res://assets/meshes/menu/controller_connected.png"
+dest_files=["res://.godot/imported/controller_connected.png-9237022e5227a61ec05272b33ac5bf4e.ctex"]
 
 [params]
 

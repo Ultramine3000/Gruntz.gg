@@ -9,6 +9,7 @@
 [ext_resource type="AudioStream" uid="uid://b3pqla47uwafr" path="res://assets/sfx/weapons/tarusjudge/revovler_holster.wav" id="5_bbpjy"]
 
 [resource]
+resource_name = "AKS74"
 script = ExtResource("1_ackuj")
 name = "AKS74"
 weapon_type = 1

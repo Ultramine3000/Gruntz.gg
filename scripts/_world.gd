@@ -97,11 +97,7 @@ func respawn(player, spawn_override:=""):
 	else:
 		while target_spawn.player_in_range():
 			target_spawn = spawn_array[randi_range(0, spawn_array.size()-1)]
-	player.global_transform = target_spawn.global_transform 
-	
-	
-	var rad = target_spawn.get_node("shape").shape.radius
-	player.global_transform.origin += Vector3(randf_range(-rad, rad), 0, randf_range(-rad, rad))
+	player.global_transform = target_spawn.global_transform
 
 func end_game(winner: Player):
 	# Check if networked multiplayer

@@ -76,6 +76,7 @@ var animation_inputs: Dictionary[String, bool]
 ## JUMPING ##
 @export_category("Jumping")
 @export_range(0.0, 100.0) var jump_force := 0.0
+var is_jumping := false  # NEW: Track if currently in jump animation
 var jump_queued := false
 
 ## SHOOTING ##
@@ -138,6 +139,12 @@ func _ready() -> void:
 	if side_weapon:
 		side_weapon = side_weapon.duplicate(true)
 	
+	# APPLY LOADOUT FROM MENU FIRST (before ammo setup)
+	if is_instance_valid(Game) and not Game.player_loadouts.is_empty():
+		if ctrl_port < Game.player_loadouts.size():
+			var loadout = Game.player_loadouts[ctrl_port]
+			_apply_loadout(loadout)
+	
 	# Load appropriate HUD based on multiplayer mode
 	_setup_hud()
 	
@@ -156,15 +163,16 @@ func _ready() -> void:
 	print("Player ctrl_port ", ctrl_port, " using view_layer: ", view_layer)
 	
 	# Set player name in HUD
-	var player_name = "Player " + str(ctrl_port + 1)
-	if hud.has_node("player_label"):
+	if hud and hud.has_node("player_label"):
+		var player_name = "Player " + str(ctrl_port + 1)
 		hud.get_node("player_label").text = player_name
 	
 	# Handle HUD visibility in networked mode
 	if multiplayer.multiplayer_peer is not OfflineMultiplayerPeer:
 		if not is_multiplayer_authority():
 			# Hide HUD for remote players
-			hud.hide()
+			if hud:
+				hud.hide()
 	
 	# Set up camera
 	camera.cull_mask = 1
@@ -193,12 +201,14 @@ func _ready() -> void:
 	if has_node("muzzle_flash"):
 		_set_body_vis_recursive(get_node("muzzle_flash"))
 	
-	# Set weapon ammo AFTER duplicating
+	# Set weapon ammo AFTER duplicating AND after loadout
 	if current_weapon:
-		ammo[current_weapon.name] = current_weapon.max_ammo * ammo_default_multiplier
+		var weapon_key = _get_weapon_key(current_weapon)
+		ammo[weapon_key] = current_weapon.max_ammo * ammo_default_multiplier
 		current_weapon.current_ammo = current_weapon.max_ammo
 	if side_weapon: 
-		ammo[side_weapon.name] = side_weapon.max_ammo * ammo_default_multiplier
+		var weapon_key = _get_weapon_key(side_weapon)
+		ammo[weapon_key] = side_weapon.max_ammo * ammo_default_multiplier
 		side_weapon.current_ammo = side_weapon.max_ammo
 	switch_weapon(true)
 	
@@ -213,9 +223,10 @@ func _ready() -> void:
 	
 	# Misc.
 	health = max_health
-	hud.health_bar.max_value = max_health
-	hud.health_bar.value = health
-	hud.update_score()
+	if hud:
+		hud.health_bar.max_value = max_health
+		hud.health_bar.value = health
+		hud.update_score()
 	body_anim_oneshot.animation_finished.connect(_on_death_anim_done.bind(1))
 	
 	# Mouse capture logic
@@ -307,10 +318,6 @@ func _physics_process(delta: float) -> void:
 	_handle_walk_sound()  # Call the walk sound handler
 
 func _control_process():
-	
-	if hud and hud.is_paused:
-		return
-	
 	if health <= 0: return
 	
 	# For networked multiplayer, only respond to controller 0 if this is our authority
@@ -402,10 +409,6 @@ func _is_scope_visible() -> bool:
 	return false
 
 func _camera_process(delta):
-	# Don't process camera input when paused
-	if hud and hud.is_paused:
-		return
-	
 	if health <= 0:
 		return
 
@@ -486,22 +489,6 @@ func _camera_process(delta):
 		camera.rotation.y = sway_rotation_y
 
 func _movement_process(delta):
-	# Don't process movement when paused
-	if hud and hud.is_paused:
-		# Set input to zero when paused
-		direction = direction.lerp(Vector3.ZERO, decel * delta)
-		speed = move_toward(speed, 0.0, decel * delta)
-		var gravity := velocity.y
-		var world_gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * delta * gravity_multiplier
-		if not is_on_floor():
-			gravity -= world_gravity
-		else:
-			gravity = GRAVITY_COLLIDE
-		velocity = direction * speed
-		velocity.y = gravity
-		move_and_slide()
-		return
-	
 	# Determine controller prefix based on multiplayer mode
 	var controller_prefix = "p0"
 	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
@@ -548,6 +535,13 @@ func _movement_process(delta):
 	move_and_slide()
 
 func _anim_arms_process():
+	# Safety check - make sure current_arm_rig exists
+	if not current_arm_rig or not is_instance_valid(current_arm_rig):
+		return
+	
+	if not current_arm_rig.has_node("anim_continue"):
+		return
+	
 	var continue_player: AnimationPlayer = current_arm_rig.get_node("anim_continue")
 
 	# Always play idle animation for arms - sprint animation is now procedural
@@ -562,6 +556,13 @@ func _anim_arms_process():
 		continue_player.play(anim_to_play, custom_blend, custom_speed)
 
 func _anim_body_process(player_id):
+	# Safety check
+	if not body_rig or not is_instance_valid(body_rig):
+		return
+	
+	if not body_rig.has_node("anim_continue"):
+		return
+	
 	var continue_player: AnimationPlayer = body_rig.get_node("anim_continue")
 
 	var anim_to_play := "Idle"  # Default animation
@@ -602,6 +603,10 @@ func _anim_body_process(player_id):
 	if dead:
 		return
 
+	# SAFETY CHECK FOR CURRENT_WEAPON
+	if not current_weapon or not is_instance_valid(current_weapon):
+		return
+
 	# Determine the correct weapon prefix
 	var weapon_prefix := ""
 	match current_weapon.weapon_type:
@@ -625,11 +630,23 @@ func _anim_body_process(player_id):
 			"jump": Input.is_action_pressed(controller_prefix + "_jump"),
 		}
 
-	# Handle jump
-	if animation_inputs["jump"] and not is_on_floor():
-		anim_to_play = "Jump"
+	# Handle jump animation
+	if is_jumping and not is_on_floor():
+		# Play jump animation
+		anim_to_play = weapon_prefix + "Jump"
+		custom_speed = animation_speeds.get(anim_to_play, 1.0)
+		
+		# Only play if not already playing
+		if continue_player.current_animation != anim_to_play:
+			continue_player.play(anim_to_play, 0.1, custom_speed)
+		return  # Don't play any other animations while jumping
+	
+	# Reset jumping state when landed
+	if is_on_floor() and is_jumping:
+		is_jumping = false
+	
 	# Handle sprint with directional variants
-	elif is_sprinting and animation_inputs["walk_fw"]:
+	if is_sprinting and animation_inputs["walk_fw"]:
 		var left = animation_inputs["walk_lf"]
 		var right = animation_inputs["walk_rt"]
 		
@@ -680,6 +697,7 @@ func jump():
 	if not is_on_floor():
 		return
 	jump_queued = true
+	is_jumping = true  # Set jumping state
 	# Stop sprinting when jumping
 	stop_sprint()
 
@@ -687,6 +705,11 @@ func jump():
 func switch_weapon(update_only: bool = false) -> void:
 	# Don't allow weapon switching if already switching, inspecting, or on cooldown
 	if weapon_switching or inspecting or switch_cooldown > 0.0:
+		return
+	
+	# Safety check - ensure we have valid weapons
+	if not current_weapon:
+		print("ERROR: No current weapon!")
 		return
 	
 	# Set switching state to prevent other actions
@@ -814,12 +837,17 @@ func switch_weapon(update_only: bool = false) -> void:
 	weapon_switching = false  # Allow switching again
 	
 	# Update HUD
-	hud.update_ammo()
+	if hud:
+		hud.update_ammo()
 
 @rpc("authority", "call_local", "reliable")
 func inspect_weapon():
 	# Don't allow inspect while reloading, shooting, already inspecting, aiming, sprinting, or weapon switching
 	if reloading or inspecting or shoot_cooldown > 0.0 or is_aiming or is_sprinting or weapon_switching:
+		return
+	
+	# SAFETY CHECK
+	if not current_weapon or not is_instance_valid(current_weapon):
 		return
 	
 	inspecting = true
@@ -849,13 +877,19 @@ func reload():
 		return
 	if reload_time_remaining > 0.0: 
 		return
+	
+	# SAFETY CHECK
+	if not current_weapon or not is_instance_valid(current_weapon):
+		return
+	
 	if current_weapon.current_ammo >= current_weapon.max_ammo: 
 		return
 	if inspecting or is_aiming or is_sprinting or weapon_switching:  # Don't allow reload while sprinting
 		return
 	
 	# Check if player has reserve ammo before allowing reload
-	if ammo.get(current_weapon.name, 0) <= 0:
+	var weapon_key = _get_weapon_key(current_weapon)
+	if ammo.get(weapon_key, 0) <= 0:
 		return
 
 	# Set reloading state
@@ -873,7 +907,7 @@ func reload():
 		new_reload_sound.finished.connect(new_reload_sound.queue_free)
 
 	# Ammo logic
-	var extra_ammo = ammo[current_weapon.name]
+	var extra_ammo = ammo[weapon_key]
 	if extra_ammo <= 0:
 		return
 	if current_weapon.max_ammo <= extra_ammo:
@@ -885,7 +919,7 @@ func reload():
 		if current_weapon.current_ammo > current_weapon.max_ammo:
 			extra_ammo = current_weapon.current_ammo - current_weapon.max_ammo
 			current_weapon.current_ammo = current_weapon.max_ammo
-	ammo[current_weapon.name] = extra_ammo  # Update ammo reserve
+	ammo[weapon_key] = extra_ammo  # Update ammo reserve
 	
 	# Play reload animation with custom blend time
 	play_oneshot_anim_arms("reload")
@@ -901,7 +935,8 @@ func reload():
 		Weapon.WEAPON_TYPES.RIFLE:
 			play_oneshot_anim_body("reload")
 
-	hud.update_ammo()
+	if hud:
+		hud.update_ammo()
 	reload_time_remaining = current_weapon.reload_time
 
 func _on_reload_finished(anim_name: StringName):
@@ -925,6 +960,12 @@ func shoot():
 		return
 	if reloading or inspecting or is_sprinting or weapon_switching:  # Don't shoot while sprinting
 		return
+	
+	# SAFETY CHECK
+	if not current_weapon or not is_instance_valid(current_weapon):
+		print("ERROR: No current weapon!")
+		return
+	
 	if current_weapon.current_ammo <= 0:
 		reload()
 		return
@@ -963,8 +1004,9 @@ func shoot():
 	# **Reduce ammo and set cooldown**
 	shoot_cooldown = current_weapon.cooldown
 	current_weapon.current_ammo -= 1
-	hud.update_ammo()
-	hud.flash_shoot_indicator()
+	if hud:
+		hud.update_ammo()
+		hud.flash_shoot_indicator()
 	
 	if _is_scope_visible():
 		scope_shot_sway_intensity = 1.0  # Full intensity spike
@@ -972,6 +1014,9 @@ func shoot():
 
 # New function to force play animations (useful for rapid fire)
 func play_oneshot_anim_arms_force(anim_name: String, custom_blend: float = -1.0, custom_speed: float = 1.0, from_end: bool = false):
+	if not current_arm_rig or not is_instance_valid(current_arm_rig):
+		return
+	
 	var arms_anim: AnimationPlayer = current_arm_rig.get_node("anim_oneshot")
 
 	# Use predefined blend times if available
@@ -1038,8 +1083,9 @@ func take_damage(damage: int, type: String, enemy_source_path: NodePath, hit_pos
 		if enemy_source.get_multiplayer_authority() != multiplayer.get_remote_sender_id():
 			return
 	health -= damage
-	hud.hp_target = health
-	hud.flash_damage_indicator()  # Just triggers the flash, persistent vignette handles itself
+	if hud:
+		hud.hp_target = health
+		hud.flash_damage_indicator()  # Just triggers the flash, persistent vignette handles itself
 	sync_health.rpc(health)
 	
 	# Play damage sound with modulation
@@ -1112,10 +1158,16 @@ func die(_func_stage := 0, enemy_source_path := ""):
 			
 			# Play death animation
 			var anim_name = ""
-			match current_weapon.weapon_type:
-				Weapon.WEAPON_TYPES.RIFLE: anim_name = "Death"
-				Weapon.WEAPON_TYPES.PISTOL: anim_name = "Death"
-			play_oneshot_anim_body(anim_name)
+			
+			# SAFETY CHECK
+			if current_weapon and is_instance_valid(current_weapon):
+				match current_weapon.weapon_type:
+					Weapon.WEAPON_TYPES.RIFLE: anim_name = "Death"
+					Weapon.WEAPON_TYPES.PISTOL: anim_name = "Death"
+			
+			if not anim_name.is_empty():
+				play_oneshot_anim_body(anim_name)
+			
 			$die_anim.play("die")
 
 			# Disable player collision temporarily
@@ -1141,18 +1193,21 @@ func die(_func_stage := 0, enemy_source_path := ""):
 			
 			# Respawn FIRST while still dead
 			health = max_health
-			hud.hp_target = max_health
+			if hud:
+				hud.hp_target = max_health
 			collision_layer = 1
 			collision_mask = 2 | 3
 			enemy_that_killed = null
 			
 			# RESET AMMO ON RESPAWN
 			if current_weapon:
+				var weapon_key = _get_weapon_key(current_weapon)
 				current_weapon.current_ammo = current_weapon.max_ammo
-				ammo[current_weapon.name] = current_weapon.max_ammo * ammo_default_multiplier
+				ammo[weapon_key] = current_weapon.max_ammo * ammo_default_multiplier
 			if side_weapon:
+				var weapon_key = _get_weapon_key(side_weapon)
 				side_weapon.current_ammo = side_weapon.max_ammo
-				ammo[side_weapon.name] = side_weapon.max_ammo * ammo_default_multiplier
+				ammo[weapon_key] = side_weapon.max_ammo * ammo_default_multiplier
 			
 			# Reset cooldowns and states
 			shoot_cooldown = 0.0
@@ -1181,11 +1236,15 @@ func _on_death_anim_done(anim:StringName, _func_stage):
 
 func score_point(score_change):
 	current_score += score_change
-	hud.update_score()
+	if hud:
+		hud.update_score()
 	if current_score >= Game.world.target_score:
 		Game.world.end_game(self)
 
 func play_oneshot_anim_arms(anim_name: String, custom_blend: float = -1.0, custom_speed: float = 1.0, from_end: bool = false):
+	if not current_arm_rig or not is_instance_valid(current_arm_rig):
+		return
+	
 	var arms_anim: AnimationPlayer = current_arm_rig.get_node("anim_oneshot")
 
 	# Use predefined blend times if available
@@ -1197,6 +1256,9 @@ func play_oneshot_anim_arms(anim_name: String, custom_blend: float = -1.0, custo
 	arms_anim.play(anim_name, custom_blend, custom_speed, from_end)
 
 func play_oneshot_anim_body(anim_name:String, custom_blend:=-1.0, custom_speed:=1.0, from_end:=false):
+	if not body_rig or not is_instance_valid(body_rig):
+		return
+	
 	var body_anim : AnimationPlayer = body_rig.get_node("anim_oneshot")
 	if custom_blend == -1.0:
 		custom_blend = 0.1
@@ -1246,12 +1308,12 @@ func _set_muzzle_flash_vis_recursive(parent):
 func activate_muzzle_flash():
 	# Check if we're using a scoped weapon in ADS mode
 	var is_scoped_ads = false
-	if current_arm_rig.has_node("LVA4_Armature"):
+	if current_arm_rig and current_arm_rig.has_node("LVA4_Armature"):
 		var armature = current_arm_rig.get_node("LVA4_Armature")
 		is_scoped_ads = armature.is_sniper and armature.is_ads
 	
 	# Only activate muzzle flash on the weapon if NOT in scoped ADS mode
-	if not is_scoped_ads and current_arm_rig.has_node("LVA4_Armature/muzzle_flash"):
+	if not is_scoped_ads and current_arm_rig and current_arm_rig.has_node("LVA4_Armature/muzzle_flash"):
 		var flash = current_arm_rig.get_node("LVA4_Armature/muzzle_flash")
 		
 		# Restart all particle emitters under muzzle_flash
@@ -1285,7 +1347,7 @@ func activate_muzzle_flash():
 	await get_tree().create_timer(0.1).timeout
 
 	# Deactivate omni light on the weapon (only if we activated it)
-	if not is_scoped_ads and current_arm_rig.has_node("LVA4_Armature/muzzle_flash"):
+	if not is_scoped_ads and current_arm_rig and current_arm_rig.has_node("LVA4_Armature/muzzle_flash"):
 		var flash = current_arm_rig.get_node("LVA4_Armature/muzzle_flash")
 		if flash.has_node("omni_light"):
 			flash.get_node("omni_light").visible = false
@@ -1300,6 +1362,9 @@ var target_bob_offset := 0.0
 var current_bob_offset := 0.0
 
 func _handle_arms_bob(delta: float) -> void:
+	if not arms_rig:
+		return
+	
 	if speed > 0.1 and is_on_floor():
 		# Increase bob speed during sprint
 		var bob_speed_multiplier = 1.5 if is_sprinting else 1.0
@@ -1319,6 +1384,9 @@ func _handle_arms_bob(delta: float) -> void:
 	arms_rig.transform.origin.y = current_bob_offset
 
 func _handle_walk_sound():
+	if not walk_sound:
+		return
+	
 	if speed > 0.0 and is_on_floor():
 		if not walk_sound.playing:
 			walk_sound.play()
@@ -1344,6 +1412,9 @@ var max_vertical_angle = 45
 var bonesmoothrot = 0.0
 
 func look_at_object(delta):
+	if not skeleton:
+		return
+	
 	var spine_bone = skeleton.find_bone("mixamorig_Spine")
 	if spine_bone == -1:
 		print("Spine bone not found!")
@@ -1361,11 +1432,14 @@ func look_at_object(delta):
 	spine_rotation_degrees.x = clamp(spine_rotation_degrees.x, -max_vertical_angle, max_vertical_angle)
 	spine_rotation_degrees.y = clamp(spine_rotation_degrees.y, -max_horizontal_angle, max_horizontal_angle)
 	
-	# Smooth the rotation - INCREASED from 2 to 8 for faster response
+	# Smooth the rotation
 	bonesmoothrot = lerp_angle(bonesmoothrot, deg_to_rad(spine_rotation_degrees.x), 8 * delta)
 	
-	# Create simple rotation - just X axis
-	var new_rotation = Quaternion.from_euler(Vector3(bonesmoothrot, 0, 0))
+	# Add a downward offset (adjust this value to taste, negative = down)
+	var downward_offset = deg_to_rad(17.0)  # 17 degrees down
+	
+	# Create simple rotation with offset - just X axis
+	var new_rotation = Quaternion.from_euler(Vector3(bonesmoothrot + downward_offset, 0, 0))
 	
 	# Apply using pose override with LOWER blend amount so animation still works
 	var current_pose = skeleton.get_bone_global_pose(spine_bone)
@@ -1377,8 +1451,28 @@ func look_at_object(delta):
 func sync_health(value: int):
 	if not is_multiplayer_authority():
 		health = value
-		hud.hp_target = value
+		if hud:
+			hud.hp_target = value
 	
 func _process(delta: float) -> void:
 	look_at_object(delta)
 	_handle_arms_bob(delta)
+
+func _get_weapon_key(weapon: Weapon) -> String:
+	# Use resource_name if available, otherwise use the resource path filename
+	if weapon.resource_name and not weapon.resource_name.is_empty():
+		return weapon.resource_name
+	else:
+		return weapon.resource_path.get_file().get_basename()
+
+func _apply_loadout(loadout: Dictionary) -> void:
+	# Loadout now contains actual weapon resources, not names
+	if loadout.has("primary") and loadout["primary"]:
+		current_weapon = loadout["primary"].duplicate(true)
+		var weapon_name = _get_weapon_key(current_weapon)
+		print("Loaded primary weapon: ", weapon_name)
+	
+	if loadout.has("secondary") and loadout["secondary"]:
+		side_weapon = loadout["secondary"].duplicate(true)
+		var weapon_name = _get_weapon_key(side_weapon)
+		print("Loaded secondary weapon: ", weapon_name)

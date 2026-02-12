@@ -9,6 +9,7 @@
 [ext_resource type="AudioStream" uid="uid://b3pqla47uwafr" path="res://assets/sfx/weapons/tarusjudge/revovler_holster.wav" id="5_eayyt"]
 
 [resource]
+resource_name = "TarusJudge"
 script = ExtResource("1_hodff")
 name = "TarusJudge"
 weapon_type = 0
@@ -17,8 +18,6 @@ ammo_icon = ExtResource("1_6nwrn")
 cooldown = 1.0
 reload_time = 3.3
 max_ammo = 6
-recoil_strength = Vector2(0.45, 0.25)
-recoil_recovery_speed = 7.0
 fire_sound = ExtResource("3_vbspc")
 reload_sound = ExtResource("4_deq2g")
 draw_sound = ExtResource("3_5mqkx")

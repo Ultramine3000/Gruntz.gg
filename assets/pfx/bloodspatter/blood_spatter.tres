@@ -9,10 +9,10 @@ curve = SubResource("Curve_yt6k8")
 
 [resource]
 spread = 20.0
-initial_velocity_min = 0.19999999
-initial_velocity_max = 0.79999995
-linear_accel_min = 0.49999776
-linear_accel_max = 0.99999774
+initial_velocity_min = 0.2
+initial_velocity_max = 0.8
+linear_accel_min = 0.499998
+linear_accel_max = 0.999998
 scale_min = 0.5
 scale_curve = SubResource("CurveTexture_4r8wd")
 collision_mode = 2

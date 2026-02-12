@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://cwceyqimjut8o" path="res://scripts/class-weapon.gd" id="7_yuu3p"]
 
 [resource]
+resource_name = "Kar98."
 script = ExtResource("7_yuu3p")
 name = "Kar98"
 weapon_type = 1

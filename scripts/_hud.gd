@@ -238,7 +238,9 @@ func _on_quit_pressed() -> void:
 ## EXISTING HUD FUNCTIONS ##
 func update_ammo():
 	var weapon: Weapon = get_parent().current_weapon
-	if not current_weapon_name == weapon.name:
+	var weapon_name = weapon.resource_name if (weapon.resource_name and not weapon.resource_name.is_empty()) else weapon.resource_path.get_file().get_basename()
+	
+	if not current_weapon_name == weapon_name:
 		# Switching weapons: clear icons
 		for bullet in ammo_counter.get_children():
 			bullet.name += "F"
@@ -248,7 +250,7 @@ func update_ammo():
 			bullet.name = str(index + 1)
 			bullet.texture = weapon.ammo_icon
 			ammo_counter.add_child(bullet)
-		current_weapon_name = weapon.name
+		current_weapon_name = weapon_name
 	
 	# Update current ammo icons
 	for bullet in ammo_counter.get_children():
@@ -257,7 +259,8 @@ func update_ammo():
 		if curr_count <= weapon.current_ammo:
 			bullet.modulate = full_color
 	
-	ammo_extra.text = str(get_parent().ammo[weapon.name])
+	var weapon_key = weapon.resource_name if (weapon.resource_name and not weapon.resource_name.is_empty()) else weapon.resource_path.get_file().get_basename()
+	ammo_extra.text = str(get_parent().ammo.get(weapon_key, 0))
 
 func update_score():
 	points_label.text = str(get_parent().current_score)

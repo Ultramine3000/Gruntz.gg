@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Gruntz.gg"
 run/main_scene="uid://bljkplcgy1ue1"
-config/features=PackedStringArray("4.5", "Forward Plus")
+config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
@@ -256,7 +256,7 @@ p1_pause={
 
 [physics]
 
-3d/default_gravity=29.4
+3d/physics_engine="Jolt Physics"
 
 [rendering]
 
