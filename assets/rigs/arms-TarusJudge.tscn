@@ -1,154 +1,12 @@
-[gd_scene load_steps=76 format=4 uid="uid://xlu0x0g21agd"]
+[gd_scene load_steps=49 format=4 uid="uid://xlu0x0g21agd"]
 
 [ext_resource type="Script" uid="uid://da8nhrq6nya3e" path="res://scripts/weapon_ads.gd" id="1_22hq4"]
 [ext_resource type="Texture2D" uid="uid://bb7wtadoshtcy" path="res://assets/rigs/revolver_arms/revolver_updated_laser.png" id="1_uoekp"]
-[ext_resource type="Texture2D" uid="uid://1qknpq77um80" path="res://addons/muzzle_flash/Textures/MuzzleFlash01.png" id="2_v2l7h"]
-[ext_resource type="ArrayMesh" uid="uid://lsh4x0y58w3t" path="res://addons/muzzle_flash/Models/Muzzle_Planes.obj" id="3_kutqx"]
-[ext_resource type="Texture2D" uid="uid://bn8nyt0kjq1v" path="res://addons/muzzle_flash/Textures/MuzzleFlash02.png" id="4_1dc34"]
+[ext_resource type="Material" uid="uid://cvr71ilfbwgib" path="res://addons/muzzle_flash/materials/muzzleconemat.tres" id="3_xk64w"]
+[ext_resource type="Material" uid="uid://ffnsj8y2f0ew" path="res://addons/muzzle_flash/materials/muzzleflash.tres" id="4_rf02r"]
 [ext_resource type="ArrayMesh" uid="uid://cmx38xf7gb1ws" path="res://addons/muzzle_flash/Models/Muzzle_Cone.obj" id="5_2b15u"]
-[ext_resource type="Texture2D" uid="uid://cvqt7cbnwxdda" path="res://addons/muzzle_flash/Textures/Beam01.png" id="6_kn2gc"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mp7cp"]
-transparency = 1
-blend_mode = 1
-cull_mode = 2
-shading_mode = 0
-vertex_color_use_as_albedo = true
-vertex_color_is_srgb = true
-albedo_texture = ExtResource("2_v2l7h")
-
-[sub_resource type="Curve" id="Curve_ve4m3"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_3g6fe"]
-curve = SubResource("Curve_ve4m3")
-
-[sub_resource type="Curve" id="Curve_bft78"]
-_data = [Vector2(0, 0), 0.0, 3.29053, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_xxsfj"]
-curve = SubResource("Curve_bft78")
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_q7fxl"]
-gravity = Vector3(0, 0, 0)
-scale_curve = SubResource("CurveTexture_xxsfj")
-color = Color(2, 1.5, 1, 1)
-alpha_curve = SubResource("CurveTexture_3g6fe")
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pvm2f"]
-transparency = 1
-blend_mode = 1
-cull_mode = 2
-shading_mode = 0
-vertex_color_use_as_albedo = true
-vertex_color_is_srgb = true
-albedo_texture = ExtResource("4_1dc34")
-
-[sub_resource type="Curve" id="Curve_fwbkd"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_njwnj"]
-curve = SubResource("Curve_fwbkd")
-
-[sub_resource type="Curve" id="Curve_0gs3t"]
-_data = [Vector2(0, 0), 0.0, 3.29053, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_go0gw"]
-curve = SubResource("Curve_0gs3t")
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_long6"]
-gravity = Vector3(0, 0, 0)
-scale_curve = SubResource("CurveTexture_go0gw")
-color = Color(2, 1.5, 1, 1)
-alpha_curve = SubResource("CurveTexture_njwnj")
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vj7i4"]
-transparency = 1
-blend_mode = 1
-cull_mode = 2
-shading_mode = 0
-vertex_color_use_as_albedo = true
-vertex_color_is_srgb = true
-albedo_texture = ExtResource("6_kn2gc")
-billboard_mode = 3
-billboard_keep_scale = true
-particles_anim_h_frames = 1
-particles_anim_v_frames = 1
-particles_anim_loop = false
-
-[sub_resource type="Curve" id="Curve_olain"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_g1cx7"]
-curve = SubResource("Curve_olain")
-
-[sub_resource type="Curve" id="Curve_dya6b"]
-_data = [Vector2(0, 0), 0.0, 3.29053, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_3tnnp"]
-curve = SubResource("Curve_dya6b")
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_3yto1"]
-angle_min = 1.07288e-05
-angle_max = 1.07288e-05
-gravity = Vector3(0, 0, 0)
-scale_curve = SubResource("CurveTexture_3tnnp")
-color = Color(1.5, 1, 0.5, 1)
-alpha_curve = SubResource("CurveTexture_g1cx7")
-
-[sub_resource type="QuadMesh" id="QuadMesh_ryjfq"]
-size = Vector2(0.2, 0.2)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pnb88"]
-transparency = 1
-blend_mode = 1
-cull_mode = 2
-shading_mode = 0
-vertex_color_use_as_albedo = true
-vertex_color_is_srgb = true
-albedo_texture = ExtResource("6_kn2gc")
-
-[sub_resource type="Curve" id="Curve_lo7rj"]
-_data = [Vector2(0, 1), 0.0, -3.07116, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_qfysa"]
-curve = SubResource("Curve_lo7rj")
-
-[sub_resource type="Curve" id="Curve_ijw4x"]
-_limits = [0.0, 100.0, 0.0, 1.0]
-_data = [Vector2(1e-05, 0), 0.0, 52.3518, 0, 0, Vector2(1, 100), 169.722, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_hmeb0"]
-curve = SubResource("Curve_ijw4x")
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_nar6n"]
-lifetime_randomness = 1.0
-particle_flag_align_y = true
-emission_shape = 1
-emission_sphere_radius = 0.04
-direction = Vector3(0, 0, 1)
-spread = 10.0
-initial_velocity_min = 5.0
-initial_velocity_max = 10.0
-gravity = Vector3(0, 0, 0)
-damping_min = 0.5
-damping_max = 0.8
-damping_curve = SubResource("CurveTexture_hmeb0")
-scale_min = 0.05
-scale_max = 0.3
-color = Color(4.5, 3, 1, 1)
-alpha_curve = SubResource("CurveTexture_qfysa")
-
-[sub_resource type="QuadMesh" id="QuadMesh_s8dem"]
-size = Vector2(0.04, 0.2)
+[sub_resource type="QuadMesh" id="QuadMesh_v2l7h"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1cbad"]
 resource_name = "Material"
@@ -10284,57 +10142,17 @@ light_color = Color(1, 0.65, 0, 1)
 light_energy = 0.1
 omni_range = 2.23784
 
-[node name="MuzzlePlanes" type="GPUParticles3D" parent="LVA4_Armature/muzzle_flash"]
-transform = Transform3D(-0.09800203, 0.049955346, 0.00025130273, 0.049955353, 0.097996764, 0.0010464228, 0.00025134144, 0.0010464133, -0.109994724, 2.1368265e-05, 0.005415003, 0.020436183)
-material_override = SubResource("StandardMaterial3D_mp7cp")
-emitting = false
-amount = 1
-lifetime = 0.1
-one_shot = true
-randomness = 1.0
-fixed_fps = 60
-local_coords = true
-process_material = SubResource("ParticleProcessMaterial_q7fxl")
-draw_pass_1 = ExtResource("3_kutqx")
+[node name="MuzzleCone" type="MeshInstance3D" parent="LVA4_Armature/muzzle_flash"]
+transform = Transform3D(-0.105977, 5.82077e-11, 0.0022199, 1.67347e-10, 0.106, 2.32831e-10, -0.0022199, 0, -0.105977, -0.000348652, 0.00593772, 0.0161161)
+visible = false
+mesh = ExtResource("5_2b15u")
+surface_material_override/0 = ExtResource("3_xk64w")
 
-[node name="MuzzleCone" type="GPUParticles3D" parent="LVA4_Armature/muzzle_flash"]
-transform = Transform3D(-0.09800203, 0.049955346, 0.00025130273, 0.049955353, 0.097996764, 0.0010464228, 0.00025134144, 0.0010464133, -0.109994724, 2.1368265e-05, 0.005415003, 0.020436183)
-material_override = SubResource("StandardMaterial3D_pvm2f")
-emitting = false
-amount = 1
-lifetime = 0.1
-one_shot = true
-randomness = 1.0
-fixed_fps = 60
-local_coords = true
-process_material = SubResource("ParticleProcessMaterial_long6")
-draw_pass_1 = ExtResource("5_2b15u")
-
-[node name="BeamFlash" type="GPUParticles3D" parent="LVA4_Armature/muzzle_flash"]
-transform = Transform3D(-0.09800203, 0.049955346, 0.00025130273, 0.049955353, 0.097996764, 0.0010464228, 0.00025134144, 0.0010464133, -0.109994724, 2.1368265e-05, 0.005415003, 0.020436183)
-material_override = SubResource("StandardMaterial3D_vj7i4")
-emitting = false
-amount = 1
-lifetime = 0.1
-one_shot = true
-randomness = 1.0
-fixed_fps = 60
-local_coords = true
-process_material = SubResource("ParticleProcessMaterial_3yto1")
-draw_pass_1 = SubResource("QuadMesh_ryjfq")
-
-[node name="Sparks" type="GPUParticles3D" parent="LVA4_Armature/muzzle_flash"]
-transform = Transform3D(-0.09800203, 0.049955346, 0.00025130273, 0.049955353, 0.097996764, 0.0010464228, 0.00025134144, 0.0010464133, -0.109994724, 2.1368265e-05, 0.005415003, 0.020436183)
-material_override = SubResource("StandardMaterial3D_pnb88")
-emitting = false
-amount = 20
-lifetime = 0.3
-one_shot = true
-explosiveness = 0.7
-fixed_fps = 60
-local_coords = true
-process_material = SubResource("ParticleProcessMaterial_nar6n")
-draw_pass_1 = SubResource("QuadMesh_s8dem")
+[node name="MuzzleFlash" type="MeshInstance3D" parent="LVA4_Armature/muzzle_flash"]
+transform = Transform3D(0.045, -3.63798e-12, 2.91038e-10, -5.09317e-11, 0.045, -3.7835e-10, -2.32831e-10, -1.16415e-10, 0.045, -5.6251e-05, 0.00478922, 0.0174111)
+visible = false
+mesh = SubResource("QuadMesh_v2l7h")
+surface_material_override/0 = ExtResource("4_rf02r")
 
 [node name="Skeleton3D" type="Skeleton3D" parent="LVA4_Armature"]
 bones/0/name = "root"
@@ -10962,7 +10780,7 @@ bones/88/rotation = Quaternion(0.709589, 0.000327045, 0.000851674, 0.704615)
 bones/88/scale = Vector3(0.0841538, 0.0841538, 0.0841538)
 
 [node name="Plane" type="BoneAttachment3D" parent="LVA4_Armature/Skeleton3D"]
-transform = Transform3D(0.002193238, -1.6138558e-06, 3.6617432e-06, 3.6503004e-06, -1.5429101e-05, -0.0021931843, 1.6395734e-06, 0.0021931867, -1.5426487e-05, 0.081260316, 0.018671114, -0.45892498)
+transform = Transform3D(0.00219324, -1.61386e-06, 3.66174e-06, 3.6503e-06, -1.54291e-05, -0.00219318, 1.63957e-06, 0.00219319, -1.54265e-05, 0.0812603, 0.0186711, -0.458925)
 visible = false
 bone_name = "Plane"
 bone_idx = 88
@@ -10994,7 +10812,7 @@ mesh = SubResource("ArrayMesh_laq0r")
 skin = SubResource("Skin_qvhb5")
 
 [node name="barrel" type="Marker3D" parent="LVA4_Armature"]
-transform = Transform3D(0.9999428, 0, 0.010698698, 0, 1, 0, -0.010698698, 0, 0.9999428, 0.07831351, 0.025337107, -0.46322522)
+transform = Transform3D(0.999943, 0, 0.0106987, 0, 1, 0, -0.0106987, 0, 0.999943, 0.0783135, 0.0253371, -0.463225)
 
 [node name="anim_continue" type="AnimationPlayer" parent="."]
 libraries = {

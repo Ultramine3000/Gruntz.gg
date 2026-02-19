@@ -1,6 +1,6 @@
-[gd_scene load_steps=34 format=3 uid="uid://bpxknnt7iwhj6"]
+[gd_scene load_steps=48 format=3 uid="uid://bpxknnt7iwhj6"]
 
-[ext_resource type="Texture2D" uid="uid://chyx5uwsa4c2i" path="res://assets/textures/maps/obsidian_mall.png" id="1_h6f4g"]
+[ext_resource type="Texture2D" uid="uid://dllxw5rhg057f" path="res://assets/textures/maps/Screenshot 2026-02-16 170234.png" id="1_jf4as"]
 [ext_resource type="Texture2D" uid="uid://ggsmtdl0lfq1" path="res://assets/textures/ui/vignette.png" id="2_jf4as"]
 [ext_resource type="Texture2D" uid="uid://cilyaktn43hmt" path="res://assets/textures/loading_screen/loading/1.png" id="3_kr0n6"]
 [ext_resource type="Texture2D" uid="uid://cgf62ayx4usor" path="res://assets/textures/loading_screen/loading/2.png" id="4_fskrq"]
@@ -32,6 +32,17 @@
 [ext_resource type="Texture2D" uid="uid://cuc3dftdotxmq" path="res://assets/textures/loading_screen/loading/28.png" id="30_2y6hd"]
 [ext_resource type="Texture2D" uid="uid://ct8u55hktuhbx" path="res://assets/textures/loading_screen/loading/29.png" id="31_i6q7g"]
 [ext_resource type="Texture2D" uid="uid://bshfgdupawkfu" path="res://assets/textures/loading_screen/loading/30.png" id="32_uof4u"]
+[ext_resource type="ArrayMesh" uid="uid://cmx38xf7gb1ws" path="res://addons/muzzle_flash/Models/Muzzle_Cone.obj" id="33_e6cao"]
+[ext_resource type="Material" uid="uid://cvr71ilfbwgib" path="res://addons/muzzle_flash/materials/muzzleconemat.tres" id="34_5i0me"]
+[ext_resource type="ArrayMesh" uid="uid://lsh4x0y58w3t" path="res://addons/muzzle_flash/Models/Muzzle_Planes.obj" id="35_581xq"]
+[ext_resource type="Material" uid="uid://dp8q3xkome5qr" path="res://addons/muzzle_flash/materials/muzzleplanesmat.tres" id="36_25w5j"]
+[ext_resource type="Material" uid="uid://ffnsj8y2f0ew" path="res://addons/muzzle_flash/materials/muzzleflash.tres" id="37_sfeq2"]
+[ext_resource type="Material" uid="uid://b5d8jqh74rglt" path="res://assets/pfx/bloodspatter/blood_spatter.tres" id="38_qkx3t"]
+[ext_resource type="Shader" uid="uid://i4530fmjfaxo" path="res://assets/pfx/bloodspatter/blood.tres" id="39_2fn6m"]
+[ext_resource type="Script" uid="uid://bklebn1o6yosg" path="res://scripts/emitter_on_instance.gd" id="40_c74vc"]
+[ext_resource type="PackedScene" uid="uid://ctqrwrw5byilx" path="res://addons/MrMinimal'sVFX/game/entities/vfx/sparks_metal/sparks_metal.tscn" id="41_cq44t"]
+[ext_resource type="PackedScene" uid="uid://bee6s3i83yjgp" path="res://assets/bullets/bullet_decal.tscn" id="43_sfeq2"]
+[ext_resource type="PackedScene" uid="uid://cts8or62xnx6l" path="res://assets/bullets/tracer.tscn" id="44_qkx3t"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_b3t3f"]
 animations = [{
@@ -131,6 +142,17 @@ animations = [{
 "speed": 5.0
 }]
 
+[sub_resource type="QuadMesh" id="QuadMesh_2di38"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4vhp3"]
+render_priority = 0
+shader = ExtResource("39_2fn6m")
+shader_parameter/ColorParameter = Color(1, 0, 0.071664, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_2hy6r"]
+material = SubResource("ShaderMaterial_4vhp3")
+size = Vector2(0.18, 0.18)
+
 [node name="load_screen" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -139,23 +161,26 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="obsidian_mall" type="Sprite2D" parent="."]
-visible = false
+[node name="map_pit" type="Sprite2D" parent="."]
 position = Vector2(960, 539)
-texture = ExtResource("1_h6f4g")
 
-[node name="Vignette" type="Sprite2D" parent="obsidian_mall"]
-position = Vector2(13.4999, -2.50002)
-scale = Vector2(1.68516, 1.69306)
+[node name="map" type="Sprite2D" parent="map_pit"]
+position = Vector2(2.005, -43.605)
+scale = Vector2(1.507, 1.509)
+texture = ExtResource("1_jf4as")
+
+[node name="Vignette" type="Sprite2D" parent="map_pit"]
+position = Vector2(15.5001, -136.5)
+scale = Vector2(1.55547, 1.92361)
 texture = ExtResource("2_jf4as")
 
-[node name="Label" type="Label" parent="obsidian_mall"]
+[node name="Label" type="Label" parent="map_pit"]
 offset_left = -944.0
 offset_top = 427.0
 offset_right = -61.0
 offset_bottom = 564.0
 theme_override_font_sizes/font_size = 75
-text = "OBSIDIAN MALL"
+text = "map_pit"
 
 [node name="loading_icon" type="AnimatedSprite2D" parent="."]
 position = Vector2(1853, 1016)
@@ -164,3 +189,58 @@ sprite_frames = SubResource("SpriteFrames_b3t3f")
 autoplay = "default"
 frame_progress = 0.141428
 speed_scale = 5.0
+
+[node name="shaders_particles" type="Node3D" parent="."]
+
+[node name="muzzle_flash" type="Node3D" parent="shaders_particles"]
+transform = Transform3D(10.2974, -0.565509, -2.90783, 0.692488, 10.6861, 0.374077, 2.88023, -0.547424, 10.3061, -0.287195, -0.42256, 0)
+
+[node name="omni_light" type="OmniLight3D" parent="shaders_particles/muzzle_flash"]
+transform = Transform3D(-3.95812e-09, -0.0933271, -3.72529e-09, 0.0933271, -3.37604e-09, -9.31323e-10, 0, -5.58794e-09, 0.0933271, 0.0905835, 0.0353602, -0.0140672)
+light_color = Color(1, 0.647059, 0, 1)
+light_energy = 0.1
+
+[node name="MuzzleCone" type="MeshInstance3D" parent="shaders_particles/muzzle_flash"]
+transform = Transform3D(0.0909501, -0.00301067, 8.41338e-05, 5.79054e-05, 0.00428955, 0.0908988, -0.0030113, -0.090849, 0.00428911, 0.0249356, 0.0377161, 0.00428371)
+mesh = ExtResource("33_e6cao")
+skeleton = NodePath("../MuzzlePlanes")
+surface_material_override/0 = ExtResource("34_5i0me")
+
+[node name="MuzzlePlanes" type="MeshInstance3D" parent="shaders_particles/muzzle_flash"]
+transform = Transform3D(-0.100698, -0.0355182, 0.00688405, 0.0051139, 0.00618165, 0.106699, -0.0358159, 0.100743, -0.00412002, 0.0236986, 0.0330029, 0.00415919)
+mesh = ExtResource("35_581xq")
+surface_material_override/0 = ExtResource("36_25w5j")
+
+[node name="MuzzleFlash" type="MeshInstance3D" parent="shaders_particles/muzzle_flash"]
+transform = Transform3D(0.06, 2.32831e-10, -3.25963e-09, 0, 0.06, 2.32831e-10, 2.37924e-09, -2.32831e-10, 0.06, 0.024927, 0.043753, 0.00367451)
+mesh = SubResource("QuadMesh_2di38")
+surface_material_override/0 = ExtResource("37_sfeq2")
+
+[node name="blood" type="GPUParticles3D" parent="shaders_particles"]
+transform = Transform3D(-0.0901981, 0, 0.995924, 0, 1, 0, -0.995924, 0, -0.0901981, 0.336014, 0, 0)
+sub_emitter = NodePath("../blood_spot")
+lifetime = 0.5
+local_coords = true
+process_material = ExtResource("38_qkx3t")
+draw_pass_1 = SubResource("QuadMesh_2hy6r")
+script = ExtResource("40_c74vc")
+
+[node name="SparksMetal" parent="shaders_particles" instance=ExtResource("41_cq44t")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.358165, 0, 0)
+emitting = true
+one_shot = false
+script = ExtResource("40_c74vc")
+
+[node name="MeshInstance3D" parent="shaders_particles" instance=ExtResource("43_sfeq2")]
+transform = Transform3D(0.08, 0, 0, 0, 0.08, 0, 0, 0, 0.08, -0.705857, 0, 0)
+
+[node name="tracer" parent="shaders_particles" instance=ExtResource("44_qkx3t")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.45106, 0, 3.8034)
+
+[node name="SubViewport" type="SubViewport" parent="shaders_particles"]
+render_target_update_mode = 4
+
+[node name="Camera3D" type="Camera3D" parent="shaders_particles/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0641382, 0.089906, 0.558515)
+projection = 2
+size = 0.265

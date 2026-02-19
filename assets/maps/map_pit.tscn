@@ -1,10 +1,9 @@
-[gd_scene load_steps=430 format=4 uid="uid://dxrckeoi0q8a0"]
+[gd_scene load_steps=431 format=4 uid="uid://dxrckeoi0q8a0"]
 
 [ext_resource type="Script" uid="uid://b2he6uqo14ibj" path="res://scripts/class-map.gd" id="1_f7g7t"]
 [ext_resource type="PackedScene" uid="uid://hbws6ycj12md" path="res://assets/rigs/player_spawn.tscn" id="2_qepph"]
 [ext_resource type="Script" uid="uid://bjjfmri8e5j7r" path="res://assets/meshes/map_pit/envi_controller.gd" id="3_o4vcn"]
 [ext_resource type="Material" uid="uid://bqkf03b5ewsr3" path="res://assets/meshes/map_pit/skymaterial.tres" id="4_t7k5x"]
-[ext_resource type="PackedScene" uid="uid://ctqrwrw5byilx" path="res://addons/MrMinimal'sVFX/game/entities/vfx/sparks_metal/sparks_metal.tscn" id="7_hbd4w"]
 [ext_resource type="Shader" uid="uid://c2i4qk5ni0xue" path="res://assets/meshes/map_pit/foliagewind.gdshader" id="8_laub1"]
 [ext_resource type="Texture2D" uid="uid://dc0jx3541b58k" path="res://assets/meshes/map_pit/map_pit_UV_tree_in2.png" id="8_o4vcn"]
 [ext_resource type="Texture2D" uid="uid://c5gvyna24br8l" path="res://assets/meshes/map_pit/village4_grass_4.png" id="9_o4vcn"]
@@ -254,6 +253,12 @@ data = PackedVector3Array(1.3603, 1, -1, 1.3416, 0.9441, 1, 1.3416, 1, -1, 1.360
 
 [sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_uq0jy"]
 data = PackedVector3Array(1.3603, 0.9074, -1, 1.3416, 0.9441, 1, 1.3416, 0.9074, -1, 1.3603, 0.9074, -1, 1.3603, 0.9441, 1, 1.3416, 0.9441, 1, 1.0289, 0.2479, -1.1878, 1.3603, 0.9441, 1, 1.3603, 0.9074, -1, 1.0289, 0.2479, -1.1878, 1.0702, 0.2755, 1.2223, 1.3603, 0.9441, 1, -1.1171, -1.3578, 1, -1.1171, -1.3578, -1, -1.1171, -1.3578, 1, -1.1171, -1.3578, 1, -1.1171, -1.3578, -1, -1.1171, -1.3578, -1, -1.1171, -1.3578, -1, 1.4595, -1.2102, 1.6872, 1.2563, -1.1435, -1.6363, -1.1171, -1.3578, -1, -1.1171, -1.3578, 1, 1.4595, -1.2102, 1.6872, 0.5709, -0.022, -0.8126, 1.3603, 0.9074, -1, 1.3416, 0.9074, -1, 0.5709, -0.022, -0.8126, 1.0289, 0.2479, -1.1878, 1.3603, 0.9074, -1, 0.5709, -0.022, -0.8126, 1.2563, -1.1435, -1.6363, 1.0289, 0.2479, -1.1878, -0.1874, -0.6538, -0.8402, 1.2563, -1.1435, -1.6363, 0.5709, -0.022, -0.8126, -1.1171, -1.3578, -1, 1.2563, -1.1435, -1.6363, -0.1874, -0.6538, -0.8402, 1.2563, -1.1435, -1.6363, -1.1171, -1.3578, -1, -1.1171, -1.3578, -1, 1.3416, 0.9441, 1, 0.5709, -0.022, -0.8126, 1.3416, 0.9074, -1, 1.3416, 0.9441, 1, 0.5709, -0.022, 0.8101, 0.5709, -0.022, -0.8126, 0.5709, -0.022, 0.8101, -0.1874, -0.6538, -0.8402, 0.5709, -0.022, -0.8126, 0.5709, -0.022, 0.8101, -0.1874, -0.6538, 0.8539, -0.1874, -0.6538, -0.8402, -0.1874, -0.6538, 0.8539, -1.1171, -1.3578, -1, -0.1874, -0.6538, -0.8402, -0.1874, -0.6538, 0.8539, -1.1171, -1.3578, 1, -1.1171, -1.3578, -1, 1.0702, 0.2755, 1.2223, 1.3416, 0.9441, 1, 1.3603, 0.9441, 1, 1.0702, 0.2755, 1.2223, 0.5709, -0.022, 0.8101, 1.3416, 0.9441, 1, 1.0702, 0.2755, 1.2223, -0.1874, -0.6538, 0.8539, 0.5709, -0.022, 0.8101, 1.4595, -1.2102, 1.6872, -0.1874, -0.6538, 0.8539, 1.0702, 0.2755, 1.2223, 1.4595, -1.2102, 1.6872, -1.1171, -1.3578, 1, -0.1874, -0.6538, 0.8539, -0.1874, -0.6538, 0.8539, -1.1171, -1.3578, 1, -1.1171, -1.3578, 1, 1.2563, -1.1435, -1.6363, 1.0702, 0.2755, 1.2223, 1.0289, 0.2479, -1.1878, 1.2563, -1.1435, -1.6363, 1.4595, -1.2102, 1.6872, 1.0702, 0.2755, 1.2223)
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_o4vcn"]
+data = PackedVector3Array(1.2325, -0.5, 0, -1.2325, -0.5, 0, 1.2325, 0.5, 0, -1.2325, -0.5, 0, -1.2325, 0.5, 0, 1.2325, 0.5, 0)
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_2lywn"]
+data = PackedVector3Array(1.425, -0.5, 0, -1.425, -0.5, 0, 1.425, 0.5, 0, -1.425, -0.5, 0, -1.425, 0.5, 0, 1.425, 0.5, 0)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_35ivg"]
 resource_name = "Vest.001"
@@ -6292,11 +6297,6 @@ visible = false
 mesh = SubResource("ArrayMesh_2dbsy")
 skeleton = NodePath("")
 
-[node name="particle_cache" type="Node3D" parent="."]
-
-[node name="SparksMetal" parent="particle_cache" instance=ExtResource("7_hbd4w")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 47.1634, 3.73316, 4.86688)
-
 [node name="CSGBox3D" type="CSGBox3D" parent="."]
 transform = Transform3D(164.99, 0, 0, 0, 164.99, 0, 0, 0, 164.99, -63.4006, 27.1839, -93.2167)
 visible = false
@@ -6656,6 +6656,14 @@ shape = SubResource("ConcavePolygonShape3D_laub1")
 transform = Transform3D(-3.8244, -3.06278e-08, -1.65172e-06, 4.00171e-08, 2.92506, -0.108516, 2.15807e-06, -0.108516, -2.92506, 8.15551, 27.8859, -92.3177)
 shape = SubResource("ConcavePolygonShape3D_uq0jy")
 
+[node name="CollisionShape3D24" type="CollisionShape3D" parent="."]
+transform = Transform3D(3.63899, -0.0286888, -2.57853, 2.57825, 0.0099601, 3.63787, 0.0508423, -6.97325, 0.0221494, -7.62779, 28.1992, -92.2382)
+shape = SubResource("ConcavePolygonShape3D_o4vcn")
+
+[node name="CollisionShape3D25" type="CollisionShape3D" parent="."]
+transform = Transform3D(3.59139, -0.0124457, 2.64454, -2.64359, -0.0282629, 3.59058, 0.0508424, -6.97326, 0.0221493, 7.79115, 27.5741, -92.2382)
+shape = SubResource("ConcavePolygonShape3D_2lywn")
+
 [node name="map_pit" type="Node3D" parent="."]
 transform = Transform3D(8.16, 0, 0, 0, 8.16, 0, 0, 0, 8.16, 0, 0, 0)
 
@@ -7014,7 +7022,7 @@ mesh = SubResource("ArrayMesh_06y0s")
 skeleton = NodePath("")
 
 [node name="Barricade_002" type="MeshInstance3D" parent="map_pit"]
-transform = Transform3D(-0.493724, -0.00895943, -1.40261, 0.0806885, 1.48433, -0.037884, 1.40032, -0.088688, -0.49235, 4.1272, 2.9615, -10.9271)
+transform = Transform3D(-0.493724, -0.00895943, -1.40261, 0.0806885, 1.48433, -0.037884, 1.40032, -0.088688, -0.49235, 4.14935, 2.9615, -10.9271)
 mesh = SubResource("ArrayMesh_yc5bp")
 skeleton = NodePath("")
 
@@ -12649,7 +12657,7 @@ mesh = SubResource("ArrayMesh_68rrp")
 skeleton = NodePath("")
 
 [node name="grass_584" type="MeshInstance3D" parent="map_pit"]
-transform = Transform3D(-0.11262, 0.0440232, 0, 0, 0, -0.120919, -0.0440232, -0.11262, 0, 7.22347, 2.68819, -15.0079)
+transform = Transform3D(-0.11262, 0.0440232, 0, 0, 0, -0.120919, -0.0440232, -0.11262, 0, 4.50657, 2.68819, -15.0079)
 mesh = SubResource("ArrayMesh_68rrp")
 skeleton = NodePath("")
 
@@ -12709,12 +12717,12 @@ mesh = SubResource("ArrayMesh_68rrp")
 skeleton = NodePath("")
 
 [node name="grass_596" type="MeshInstance3D" parent="map_pit"]
-transform = Transform3D(-0.065777, -0.100087, 5.88092e-09, -1.0708e-08, 0, -0.119767, 0.100087, -0.065777, -8.94848e-09, 4.61215, 2.82537, -12.0279)
+transform = Transform3D(-0.065777, -0.100087, 5.88092e-09, -1.0708e-08, 0, -0.119767, 0.100087, -0.065777, -8.94848e-09, 4.61215, 2.77388, -12.0279)
 mesh = SubResource("ArrayMesh_68rrp")
 skeleton = NodePath("")
 
 [node name="grass_597" type="MeshInstance3D" parent="map_pit"]
-transform = Transform3D(0.107736, -0.0492428, 7.47559e-09, 1.76513e-09, -1.41211e-08, -0.118456, 0.0492428, 0.107736, -1.21093e-08, 3.92921, 2.86777, -11.4011)
+transform = Transform3D(0.107736, -0.0492428, 7.47559e-09, 1.76513e-09, -1.41211e-08, -0.118456, 0.0492428, 0.107736, -1.21093e-08, 3.92921, 2.82397, -11.5327)
 mesh = SubResource("ArrayMesh_68rrp")
 skeleton = NodePath("")
 

@@ -173,14 +173,6 @@ func _update_csgo_weapon_sway(delta: float):
 	if player_reference == null:
 		return
 	
-	# Don't process when paused
-	if player_reference.hud and player_reference.hud.is_paused:
-		weapon_lag_rotation = weapon_lag_rotation.lerp(Vector3.ZERO, look_lag_speed * delta)
-		weapon_tilt_rotation = weapon_tilt_rotation.lerp(Vector3.ZERO, look_tilt_speed * delta)
-		look_input_velocity = Vector2.ZERO
-		smoothed_look_velocity = Vector2.ZERO
-		return
-	
 	# Get raw camera input
 	var horizontal_input := 0.0
 	var vertical_input := 0.0

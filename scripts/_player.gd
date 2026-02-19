@@ -148,10 +148,6 @@ func _ready() -> void:
 	# Load appropriate HUD based on multiplayer mode
 	_setup_hud()
 	
-	# SET PLAYER ID FOR HUD - THIS IS THE NEW LINE
-	if hud:
-		hud.set_player_id(ctrl_port)
-	
 	# Determine view layer based on mode
 	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
 		# LOCAL MODE: Each player has unique view layer
@@ -954,6 +950,7 @@ func _on_reload_finished(anim_name: StringName):
 
 @rpc("authority", "call_local", "reliable")
 func shoot():
+	
 	if shoot_cooldown > 0.0:
 		return
 	if reload_time_remaining > 0.0:
@@ -1305,6 +1302,10 @@ func _set_muzzle_flash_vis_recursive(parent):
 	for child in parent.get_children():
 		_set_muzzle_flash_vis_recursive(child)
 
+# Track last rotation to prevent immediate repeats
+var last_muzzle_rotation := -999.0
+var muzzle_rotation_repeat_count := 0
+
 func activate_muzzle_flash():
 	# Check if we're using a scoped weapon in ADS mode
 	var is_scoped_ads = false
@@ -1315,48 +1316,86 @@ func activate_muzzle_flash():
 	# Only activate muzzle flash on the weapon if NOT in scoped ADS mode
 	if not is_scoped_ads and current_arm_rig and current_arm_rig.has_node("LVA4_Armature/muzzle_flash"):
 		var flash = current_arm_rig.get_node("LVA4_Armature/muzzle_flash")
-		
-		# Restart all particle emitters under muzzle_flash
-		for child in flash.get_children():
-			if child is GPUParticles3D:
-				child.restart()
-			elif child is GPUParticles2D:
-				child.restart()
-		
-		# Activate omni light
-		if flash.has_node("omni_light"):
-			var light = flash.get_node("omni_light")
-			light.visible = true
+		_activate_muzzle_meshes(flash)
 
 	# Always activate muzzle flash on the player rig (third-person view)
 	if has_node(player_muzzle_flash):
 		var player_flash = get_node(player_muzzle_flash)
-		
-		# Restart all particle emitters under player muzzle_flash
-		for child in player_flash.get_children():
-			if child is GPUParticles3D:
-				child.restart()
-			elif child is GPUParticles2D:
-				child.restart()
-		
-		# Activate omni light
-		if player_flash.has_node("omni_light"):
-			var light = player_flash.get_node("omni_light")
-			light.visible = true
+		_activate_muzzle_meshes(player_flash)
 
 	await get_tree().create_timer(0.1).timeout
 
-	# Deactivate omni light on the weapon (only if we activated it)
+	# Deactivate meshes on the weapon (only if we activated it)
 	if not is_scoped_ads and current_arm_rig and current_arm_rig.has_node("LVA4_Armature/muzzle_flash"):
 		var flash = current_arm_rig.get_node("LVA4_Armature/muzzle_flash")
-		if flash.has_node("omni_light"):
-			flash.get_node("omni_light").visible = false
+		_deactivate_muzzle_meshes(flash)
 
-	# Deactivate omni light on the player rig
+	# Deactivate meshes on the player rig
 	if has_node(player_muzzle_flash):
 		var player_flash = get_node(player_muzzle_flash)
-		if player_flash.has_node("omni_light"):
-			player_flash.get_node("omni_light").visible = false
+		_deactivate_muzzle_meshes(player_flash)
+
+func _activate_muzzle_meshes(flash_node: Node3D):
+	# Recursively find and show all mesh instances
+	_activate_meshes_recursive(flash_node)
+	
+	# Activate omni light if present
+	if flash_node.has_node("omni_light"):
+		var light = flash_node.get_node("omni_light")
+		light.visible = true
+
+func _activate_meshes_recursive(node: Node):
+	# If this node is a MeshInstance3D, show it
+	if node is MeshInstance3D:
+		node.visible = true
+		
+		# Special handling for MuzzleCone - rotate it randomly
+		if node.name == "MuzzleCone":
+			var new_rotation = _get_next_muzzle_rotation()
+			node.rotation.z = deg_to_rad(new_rotation)
+	
+	# Recursively check all children
+	for child in node.get_children():
+		_activate_meshes_recursive(child)
+
+func _deactivate_muzzle_meshes(flash_node: Node3D):
+	# Recursively find and hide all mesh instances
+	_deactivate_meshes_recursive(flash_node)
+	
+	# Deactivate omni light if present
+	if flash_node.has_node("omni_light"):
+		flash_node.get_node("omni_light").visible = false
+
+func _deactivate_meshes_recursive(node: Node):
+	# If this node is a MeshInstance3D, hide it
+	if node is MeshInstance3D:
+		node.visible = false
+	
+	# Recursively check all children
+	for child in node.get_children():
+		_deactivate_meshes_recursive(child)
+
+func _get_next_muzzle_rotation() -> float:
+	# Generate random rotation angles (0, 90, 180, 270 degrees)
+	var possible_rotations = [0.0, 90.0, 180.0, 270.0]
+	
+	# If we've already repeated the same rotation twice, force a new one
+	if muzzle_rotation_repeat_count >= 2:
+		# Remove the last rotation from possibilities
+		possible_rotations.erase(last_muzzle_rotation)
+		muzzle_rotation_repeat_count = 0
+	
+	# Pick a random rotation
+	var new_rotation = possible_rotations[randi() % possible_rotations.size()]
+	
+	# Track repeats
+	if new_rotation == last_muzzle_rotation:
+		muzzle_rotation_repeat_count += 1
+	else:
+		muzzle_rotation_repeat_count = 1
+	
+	last_muzzle_rotation = new_rotation
+	return new_rotation
 
 var target_bob_offset := 0.0
 var current_bob_offset := 0.0
@@ -1436,7 +1475,7 @@ func look_at_object(delta):
 	bonesmoothrot = lerp_angle(bonesmoothrot, deg_to_rad(spine_rotation_degrees.x), 8 * delta)
 	
 	# Add a downward offset (adjust this value to taste, negative = down)
-	var downward_offset = deg_to_rad(17.0)  # 17 degrees down
+	var downward_offset = deg_to_rad(7.0)  # 7 degrees down
 	
 	# Create simple rotation with offset - just X axis
 	var new_rotation = Quaternion.from_euler(Vector3(bonesmoothrot + downward_offset, 0, 0))

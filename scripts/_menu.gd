@@ -801,10 +801,6 @@ func _get_all_children(node: Node) -> Array:
 # ==================== GAME LOGIC ====================
 
 func _start_local_match() -> void:
-	if not is_instance_valid(Game):
-		push_error("Game autoload not found")
-		return
-	
 	var load_screen = preload("res://core/load_screen.tscn").instantiate()
 	get_tree().root.add_child(load_screen)
 	
@@ -812,19 +808,17 @@ func _start_local_match() -> void:
 	if sprite_node and sprite_node is Sprite2D:
 		sprite_node.visible = true
 	
-	var timer = Timer.new()
-	timer.wait_time = 3.0
-	timer.one_shot = true
-	add_child(timer)
-	timer.start()
+	# Wait for rendering to actually happen
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw  # Extra frame for safety
 	
-	timer.timeout.connect(func():
-		# Pass loadouts to Game
-		Game.player_loadouts = [p0_loadout, p1_loadout]
-		Game.start_match(selected_map, 2, selected_points)
-		load_screen.queue_free()
-		queue_free()
-	)
+	# Small additional delay for complex shaders
+	await get_tree().create_timer(3.5).timeout
+	
+	Game.player_loadouts = [p0_loadout, p1_loadout]
+	Game.start_match(selected_map, 2, selected_points)
+	load_screen.queue_free()
+	queue_free()
 
 func _create_lobby() -> void:
 	if not is_instance_valid(Matchmaking):
