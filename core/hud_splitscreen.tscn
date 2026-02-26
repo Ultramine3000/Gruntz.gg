@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://bnjydn82lcvtv"]
+[gd_scene load_steps=15 format=3 uid="uid://bnjydn82lcvtv"]
 
 [ext_resource type="Script" uid="uid://cx2waf81771er" path="res://scripts/_hud.gd" id="1_xh14w"]
 [ext_resource type="Texture2D" uid="uid://d15tlq33gen8i" path="res://assets/textures/ui/health_icon.png" id="3_vv0im"]
@@ -52,23 +52,6 @@ expand_margin_right = 4.0
 border_width_left = 4
 border_color = Color(1, 1, 1, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_eclha"]
-bg_color = Color(0.238744, 0.238744, 0.238744, 1)
-border_width_left = 8
-border_width_top = 8
-border_width_right = 8
-border_width_bottom = 8
-border_color = Color(0.106237, 0.106237, 0.106236, 1)
-border_blend = true
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-expand_margin_left = 16.0
-expand_margin_top = 16.0
-expand_margin_right = 16.0
-expand_margin_bottom = 16.0
-
 [sub_resource type="Gradient" id="Gradient_wwirt"]
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_f4txf"]
@@ -77,8 +60,8 @@ fill_to = Vector2(0, 0)
 
 [node name="hud" type="Control"]
 layout_mode = 3
-anchor_right = 0.8333333
-anchor_bottom = 0.8348765
+anchor_right = 0.833333
+anchor_bottom = 0.834876
 offset_bottom = -450.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -91,8 +74,8 @@ metadata/_edit_use_anchors_ = true
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
-anchor_bottom = 0.99600005
-offset_bottom = 0.14001465
+anchor_bottom = 0.996
+offset_bottom = 0.140015
 theme_override_styles/panel = SubResource("StyleBoxFlat_bw7k3")
 
 [node name="health" type="Control" parent="."]
@@ -196,62 +179,21 @@ stream = ExtResource("8_piyoa")
 volume_db = 4.147
 pitch_scale = 1.02
 
-[node name="Options" type="Control" parent="."]
-visible = false
-anchors_preset = 0
-offset_left = 574.0
-offset_top = 83.0
-offset_right = 614.0
-offset_bottom = 123.0
-
-[node name="bg_panel" type="Panel" parent="Options"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -81.0
-offset_top = 8.0
-offset_right = 514.0
-offset_bottom = 171.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_eclha")
-
-[node name="SensitivitySlider" type="HSlider" parent="Options"]
-layout_mode = 0
-offset_left = 3.0
-offset_top = 50.0
-offset_right = 463.0
-offset_bottom = 122.0
-max_value = 10.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="Label" type="Label" parent="Options/SensitivitySlider"]
-layout_mode = 0
-offset_left = 168.0
-offset_top = -17.0
-offset_right = 289.0
-offset_bottom = 6.0
-text = "Look Sensitivity"
-
 [node name="scope" type="Sprite2D" parent="."]
 visible = false
 z_index = -2
-position = Vector2(799.167, 225.72939)
-scale = Vector2(0.435357, 0.4180174)
+position = Vector2(799.167, 225.729)
+scale = Vector2(0.435357, 0.418017)
 texture = ExtResource("9_khpnb")
 
 [node name="border" type="Sprite2D" parent="scope"]
-position = Vector2(1274.53, -0.7503833)
-scale = Vector2(17.7746, 16.851551)
+position = Vector2(1274.53, -0.750383)
+scale = Vector2(17.7746, 16.8516)
 texture = SubResource("GradientTexture2D_f4txf")
 
 [node name="border2" type="Sprite2D" parent="scope"]
-position = Vector2(-1377.24, 0.2503481)
-scale = Vector2(14.3852, 16.882824)
+position = Vector2(-1377.24, 0.250348)
+scale = Vector2(14.3852, 16.8828)
 texture = SubResource("GradientTexture2D_f4txf")
 
 [node name="reticle" type="Control" parent="."]

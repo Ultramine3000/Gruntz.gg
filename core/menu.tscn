@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://dwgy71fyoxp3n"]
+[gd_scene load_steps=14 format=3 uid="uid://dwgy71fyoxp3n"]
 
 [ext_resource type="Script" uid="uid://bmq5pvsw4xyg" path="res://scripts/_menu.gd" id="1_wd2sg"]
 [ext_resource type="Script" uid="uid://cwceyqimjut8o" path="res://scripts/class-weapon.gd" id="2_4oiyn"]
@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://dbb6rb05cqh4o" path="res://assets/textures/HTML5_logo_and_wordmark.svg.png" id="4_wyrkb"]
 [ext_resource type="Resource" uid="uid://b1un2a15q5vl7" path="res://assets/weapons/TarusJudge.tres" id="5_8ah6k"]
 [ext_resource type="AudioStream" uid="uid://4qqycaieat1f" path="res://assets/sfx/menu/Groves.mp3" id="5_ffj4i"]
+[ext_resource type="Resource" uid="uid://dkyuqdu3rb028" path="res://assets/weapons/Fists.tres" id="5_kgx2x"]
 [ext_resource type="Texture2D" uid="uid://d0w0t68gudbvw" path="res://icon.svg" id="5_txbfy"]
 [ext_resource type="Texture2D" uid="uid://ggsmtdl0lfq1" path="res://assets/textures/ui/vignette.png" id="6_grplm"]
 
@@ -21,8 +22,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_wd2sg")
-available_primary_weapons = Array[ExtResource("2_4oiyn")]([ExtResource("3_kgx2x"), ExtResource("4_ee0v4")])
-available_secondary_weapons = Array[ExtResource("2_4oiyn")]([ExtResource("5_8ah6k")])
+available_primary_weapons = Array[ExtResource("2_4oiyn")]([ExtResource("3_kgx2x"), ExtResource("4_ee0v4"), ExtResource("5_kgx2x")])
+available_secondary_weapons = Array[ExtResource("2_4oiyn")]([ExtResource("5_8ah6k"), ExtResource("5_kgx2x")])
 controller_detected_texture = ExtResource("2_ffj4i")
 controller_not_detected_texture = ExtResource("3_ffj4i")
 

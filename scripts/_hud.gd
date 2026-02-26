@@ -89,7 +89,15 @@ func _update_damage_vignette(delta: float):
 func update_ammo():
 	var weapon: Weapon = get_parent().current_weapon
 	var weapon_name = weapon.resource_name if (weapon.resource_name and not weapon.resource_name.is_empty()) else weapon.resource_path.get_file().get_basename()
-	
+
+	# Clear bullet icons and show ∞ for unarmed
+	if weapon.weapon_type == Weapon.WEAPON_TYPES.UNARMED:
+		for bullet in ammo_counter.get_children():
+			bullet.queue_free()
+		current_weapon_name = weapon_name
+		ammo_extra.text = "∞"
+		return
+
 	if not current_weapon_name == weapon_name:
 		for bullet in ammo_counter.get_children():
 			bullet.name += "F"

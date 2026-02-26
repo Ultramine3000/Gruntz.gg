@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Weapon" load_steps=3 format=3 uid="uid://dkyuqdu3rb028"]
+
+[ext_resource type="AudioStream" uid="uid://8v5swjygvyjb" path="res://assets/sfx/weapons/fists/melee_swing.mp3" id="1_5y2lm"]
+[ext_resource type="Script" uid="uid://cwceyqimjut8o" path="res://scripts/class-weapon.gd" id="7_sqo13"]
+
+[resource]
+resource_name = "Fists"
+script = ExtResource("7_sqo13")
+name = "Fists"
+weapon_type = 2
+cooldown = 1.555
+reload_time = 0.0
+max_ammo = 1
+fire_sound = ExtResource("1_5y2lm")

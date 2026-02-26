@@ -1,7 +1,7 @@
 extends Resource
 class_name Weapon
 
-enum WEAPON_TYPES {PISTOL, RIFLE}
+enum WEAPON_TYPES {PISTOL, RIFLE, UNARMED}
 
 @export_category("BaseWeapon")
 @export var name : String = ""
