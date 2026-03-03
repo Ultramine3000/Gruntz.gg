@@ -28,36 +28,36 @@ uniform float leaf_flutter : hint_range(0.0, 1.0) = 0.5;
 void vertex() {
 	// Original UV scaling
 	UV = UV * uv1_scale.xy + uv1_offset.xy;
-	
+
 	// Wind effects
 	// Get world position for wind variation
 	vec3 world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-	
+
 	// Base wind wave using world position for variation
 	float wind_wave = sin(TIME * wind_speed + world_pos.x * 0.5 + world_pos.z * 0.5) * 0.5 + 0.5;
 	float wind_wave2 = cos(TIME * wind_speed * 0.7 + world_pos.x * 0.3 + world_pos.z * 0.7) * 0.5 + 0.5;
-	
+
 	// Combine waves for more natural movement
 	float combined_wind = mix(wind_wave, wind_wave2, 0.5);
-	
+
 	// Add turbulence (gusts)
 	float turbulence = sin(TIME * wind_speed * 2.0 + world_pos.x) * wind_turbulence;
 	combined_wind += turbulence;
-	
+
 	// Use vertex color red channel or UV.y as wind weight (higher vertices move more)
 	float wind_weight = max(COLOR.r, UV.y);
-	
+
 	// Apply main wind displacement
 	vec2 wind_dir_norm = normalize(wind_direction);
 	VERTEX.x += wind_dir_norm.x * combined_wind * wind_strength * wind_weight;
 	VERTEX.z += wind_dir_norm.y * combined_wind * wind_strength * wind_weight;
-	
+
 	// Add flutter effect (small rapid movements)
 	float flutter = sin(TIME * wind_speed * 5.0 + world_pos.x * 2.0 + world_pos.y * 2.0);
 	flutter *= cos(TIME * wind_speed * 4.3 + world_pos.z * 1.5);
 	VERTEX.x += flutter * leaf_flutter * wind_weight * 0.05;
 	VERTEX.y += flutter * leaf_flutter * wind_weight * 0.03;
-	
+
 	// Slight vertical bobbing
 	float bob = sin(TIME * wind_speed * 1.5 + world_pos.x * 0.5) * 0.5 + 0.5;
 	VERTEX.y += bob * wind_strength * wind_weight * 0.1;
