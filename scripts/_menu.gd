@@ -51,23 +51,18 @@ var multiplayer_lobby_container: Control
 var p0_controller_icon: TextureRect
 var p1_controller_icon: TextureRect
 
-# Focusable items array for navigation (buttons + selectors)
+# Focusable items array for navigation
 var current_focusable_items: Array = []
 var current_focus_index := 0
+var last_input_device := "controller"  # Track if last input was controller or mouse
 
-# All selectors storage
-var _all_selectors: Array[FocusableSelector] = []
-
-# Custom focusable item class
-class FocusableSelector:
-	var container: HBoxContainer
-	var value_label: Label
-	var left_arrow: Label
-	var right_arrow: Label
-	var focus_indicator: Label  # NEW: Green arrow
+# Selector group class
+class SelectorGroup:
+	var left_button: Button
+	var right_button: Button
+	var value_label
 	var on_left: Callable
 	var on_right: Callable
-	var is_focused := false
 
 func _ready() -> void:
 	# Initialize weapon lists from exported arrays
@@ -76,6 +71,9 @@ func _ready() -> void:
 	# Fill the screen
 	anchor_right = 1.0
 	anchor_bottom = 1.0
+	
+	# Show mouse initially
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	
 	# Setup multiplayer signals
 	multiplayer.server_disconnected.connect(_on_lobby_disconnected)
@@ -102,13 +100,11 @@ func _initialize_weapon_lists() -> void:
 	
 	for weapon in available_primary_weapons:
 		if weapon:
-			# Use resource_name if available, otherwise use resource_path filename
 			var display_name = weapon.resource_name if weapon.resource_name else weapon.resource_path.get_file().get_basename()
 			primary_weapon_names.append(display_name)
 	
 	for weapon in available_secondary_weapons:
 		if weapon:
-			# Use resource_name if available, otherwise use resource_path filename
 			var display_name = weapon.resource_name if weapon.resource_name else weapon.resource_path.get_file().get_basename()
 			secondary_weapon_names.append(display_name)
 	
@@ -130,11 +126,9 @@ func _update_controller_status() -> void:
 	if not p0_controller_icon or not p1_controller_icon:
 		return
 	
-	# Check if controllers are connected
 	var p0_connected = Input.get_connected_joypads().has(0)
 	var p1_connected = Input.get_connected_joypads().has(1)
 	
-	# Update textures
 	if controller_detected_texture and controller_not_detected_texture:
 		p0_controller_icon.texture = controller_detected_texture if p0_connected else controller_not_detected_texture
 		p1_controller_icon.texture = controller_detected_texture if p1_connected else controller_not_detected_texture
@@ -143,41 +137,64 @@ func _input(event: InputEvent) -> void:
 	if current_focusable_items.is_empty():
 		return
 	
+	var current_item = current_focusable_items[current_focus_index]
+	
+	# Detect input device - hide mouse when controller is used
+	if event is InputEventMouseMotion:
+		last_input_device = "mouse"
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	elif event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		last_input_device = "controller"
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	
 	# Navigate with D-pad/analog stick/arrow keys
 	if event.is_action_pressed("ui_down"):
+		last_input_device = "controller"
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 		_navigate_menu(1)
+		_update_focus()
 		accept_event()
 	elif event.is_action_pressed("ui_up"):
+		last_input_device = "controller"
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 		_navigate_menu(-1)
+		_update_focus()
 		accept_event()
 	
 	# Handle left/right for selectors
 	elif event.is_action_pressed("ui_left"):
-		var item = current_focusable_items[current_focus_index]
-		if item is FocusableSelector:
-			item.on_left.call()
-		accept_event()
+		last_input_device = "controller"
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+		_update_focus()
+		if current_item is SelectorGroup:
+			current_item.on_left.call()
+			accept_event()
 	elif event.is_action_pressed("ui_right"):
-		var item = current_focusable_items[current_focus_index]
-		if item is FocusableSelector:
-			item.on_right.call()
-		accept_event()
+		last_input_device = "controller"
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+		_update_focus()
+		if current_item is SelectorGroup:
+			current_item.on_right.call()
+			accept_event()
 	
 	# Select with A button (joy_button_0) or Enter
 	elif event.is_action_pressed("ui_accept"):
-		var item = current_focusable_items[current_focus_index]
-		if item is Button:
-			item.emit_signal("pressed")
-		accept_event()
+		last_input_device = "controller"
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+		if current_item is Button:
+			current_item.emit_signal("pressed")
+			accept_event()
+		elif current_item is SelectorGroup:
+			# Allow middle button to be clicked with accept
+			current_item.value_label.emit_signal("pressed")
+			accept_event()
 
 func _navigate_menu(direction: int) -> void:
 	if current_focusable_items.is_empty():
 		return
 	
-	# Update index
 	current_focus_index += direction
 	
-	# Wrap around at boundaries
 	if current_focus_index < 0:
 		current_focus_index = current_focusable_items.size() - 1
 	elif current_focus_index >= current_focusable_items.size():
@@ -193,42 +210,35 @@ func _update_focus() -> void:
 		if item is Button:
 			if is_focused:
 				item.grab_focus()
-			_highlight_button(item, is_focused)
-		elif item is FocusableSelector:
-			_highlight_selector(item, is_focused)
+			# Only highlight if using controller
+			_highlight_button(item, is_focused and last_input_device == "controller")
+		elif item is SelectorGroup:
+			# Only highlight if using controller
+			_highlight_selector(item, is_focused and last_input_device == "controller")
 
 func _highlight_button(btn: Button, highlighted: bool) -> void:
 	if highlighted:
-		btn.add_theme_color_override("font_color", Color(1.0, 0.7, 0.0))
-		# Add green arrow
+		btn.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 		if not btn.text.begins_with("> "):
 			btn.text = "> " + btn.text.trim_prefix("> ")
 	else:
 		btn.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-		# Remove green arrow
 		btn.text = btn.text.trim_prefix("> ")
 
-func _highlight_selector(selector: FocusableSelector, highlighted: bool) -> void:
+func _highlight_selector(selector: SelectorGroup, highlighted: bool) -> void:
 	if highlighted:
-		selector.value_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.0))
-		selector.left_arrow.add_theme_color_override("font_color", Color(1.0, 0.7, 0.0))
-		selector.right_arrow.add_theme_color_override("font_color", Color(1.0, 0.7, 0.0))
-		# Show green indicator
-		if selector.focus_indicator:
-			selector.focus_indicator.visible = true
+		selector.value_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+		selector.left_button.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+		selector.right_button.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 	else:
 		selector.value_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-		selector.left_arrow.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-		selector.right_arrow.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-		# Hide green indicator
-		if selector.focus_indicator:
-			selector.focus_indicator.visible = false
+		selector.left_button.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+		selector.right_button.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 
 # ==================== MAIN MENU ====================
 
 func _build_main_menu() -> void:
 	main_menu_container = VBoxContainer.new()
-	# Position in bottom-left corner like Half-Life
 	main_menu_container.anchor_left = 0.0
 	main_menu_container.anchor_top = 1.0
 	main_menu_container.anchor_right = 0.0
@@ -240,7 +250,6 @@ func _build_main_menu() -> void:
 	main_menu_container.add_theme_constant_override("separation", 10)
 	add_child(main_menu_container)
 	
-	# Buttons - simple and clean
 	var local_btn = _make_button("LOCAL MATCH")
 	local_btn.pressed.connect(func(): _switch_to_state(MenuState.MATCH_SETUP))
 	main_menu_container.add_child(local_btn)
@@ -268,7 +277,7 @@ func _build_match_setup() -> void:
 	panel.anchor_right = 0.0
 	panel.anchor_bottom = 1.0
 	panel.offset_left = 60
-	panel.offset_top = -700  # Increased height for loadouts
+	panel.offset_top = -800
 	panel.offset_right = 600
 	panel.offset_bottom = -60
 	panel.add_theme_constant_override("separation", 10)
@@ -286,7 +295,7 @@ func _build_match_setup() -> void:
 	sep1.add_theme_constant_override("separation", 10)
 	panel.add_child(sep1)
 	
-	# Controller status section - compact
+	# Controller status section
 	var controller_container = HBoxContainer.new()
 	controller_container.add_theme_constant_override("separation", 50)
 	
@@ -340,17 +349,15 @@ func _build_match_setup() -> void:
 	p1_loadout_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.0))
 	panel.add_child(p1_loadout_label)
 	
-	var p1_primary_selector = _make_weapon_selector("PRIMARY:", primary_weapon_names, 0)
-	p1_primary_selector.on_left = func(): _change_weapon(-1, p1_primary_selector, primary_weapon_names, "p0_primary")
-	p1_primary_selector.on_right = func(): _change_weapon(1, p1_primary_selector, primary_weapon_names, "p0_primary")
-	_all_selectors.append(p1_primary_selector)
-	panel.add_child(p1_primary_selector.container)
+	var p1_primary_selector = _create_selector("PRIMARY", primary_weapon_names, 0)
+	p1_primary_selector.on_left = func(): _cycle_weapon(-1, p1_primary_selector, primary_weapon_names, "p0_primary")
+	p1_primary_selector.on_right = func(): _cycle_weapon(1, p1_primary_selector, primary_weapon_names, "p0_primary")
+	panel.add_child(p1_primary_selector.value_label.get_parent())
 	
-	var p1_secondary_selector = _make_weapon_selector("SECONDARY:", secondary_weapon_names, 0)
-	p1_secondary_selector.on_left = func(): _change_weapon(-1, p1_secondary_selector, secondary_weapon_names, "p0_secondary")
-	p1_secondary_selector.on_right = func(): _change_weapon(1, p1_secondary_selector, secondary_weapon_names, "p0_secondary")
-	_all_selectors.append(p1_secondary_selector)
-	panel.add_child(p1_secondary_selector.container)
+	var p1_secondary_selector = _create_selector("SECONDARY", secondary_weapon_names, 0)
+	p1_secondary_selector.on_left = func(): _cycle_weapon(-1, p1_secondary_selector, secondary_weapon_names, "p0_secondary")
+	p1_secondary_selector.on_right = func(): _cycle_weapon(1, p1_secondary_selector, secondary_weapon_names, "p0_secondary")
+	panel.add_child(p1_secondary_selector.value_label.get_parent())
 	
 	# Separator
 	var sep_p1 = HSeparator.new()
@@ -364,17 +371,15 @@ func _build_match_setup() -> void:
 	p2_loadout_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.0))
 	panel.add_child(p2_loadout_label)
 	
-	var p2_primary_selector = _make_weapon_selector("PRIMARY:", primary_weapon_names, 0)
-	p2_primary_selector.on_left = func(): _change_weapon(-1, p2_primary_selector, primary_weapon_names, "p1_primary")
-	p2_primary_selector.on_right = func(): _change_weapon(1, p2_primary_selector, primary_weapon_names, "p1_primary")
-	_all_selectors.append(p2_primary_selector)
-	panel.add_child(p2_primary_selector.container)
+	var p2_primary_selector = _create_selector("PRIMARY", primary_weapon_names, 0)
+	p2_primary_selector.on_left = func(): _cycle_weapon(-1, p2_primary_selector, primary_weapon_names, "p1_primary")
+	p2_primary_selector.on_right = func(): _cycle_weapon(1, p2_primary_selector, primary_weapon_names, "p1_primary")
+	panel.add_child(p2_primary_selector.value_label.get_parent())
 	
-	var p2_secondary_selector = _make_weapon_selector("SECONDARY:", secondary_weapon_names, 0)
-	p2_secondary_selector.on_left = func(): _change_weapon(-1, p2_secondary_selector, secondary_weapon_names, "p1_secondary")
-	p2_secondary_selector.on_right = func(): _change_weapon(1, p2_secondary_selector, secondary_weapon_names, "p1_secondary")
-	_all_selectors.append(p2_secondary_selector)
-	panel.add_child(p2_secondary_selector.container)
+	var p2_secondary_selector = _create_selector("SECONDARY", secondary_weapon_names, 0)
+	p2_secondary_selector.on_left = func(): _cycle_weapon(-1, p2_secondary_selector, secondary_weapon_names, "p1_secondary")
+	p2_secondary_selector.on_right = func(): _cycle_weapon(1, p2_secondary_selector, secondary_weapon_names, "p1_secondary")
+	panel.add_child(p2_secondary_selector.value_label.get_parent())
 	
 	# Separator
 	var sep_p2 = HSeparator.new()
@@ -382,16 +387,17 @@ func _build_match_setup() -> void:
 	panel.add_child(sep_p2)
 	
 	# Map selector
-	var map_selector = _make_map_selector()
-	_all_selectors.append(map_selector)
-	panel.add_child(map_selector.container)
+	var map_selector = _create_selector("MAP", available_maps, 0)
+	map_selector.on_left = func(): _cycle_map(-1, map_selector)
+	map_selector.on_right = func(): _cycle_map(1, map_selector)
+	panel.add_child(map_selector.value_label.get_parent())
 	
 	# Points selector
-	var pts_selector = _make_selector("POINTS:", selected_points, 5, 100, 5)
-	pts_selector.on_left = func(): _change_points(-5, pts_selector)
-	pts_selector.on_right = func(): _change_points(5, pts_selector)
-	_all_selectors.append(pts_selector)
-	panel.add_child(pts_selector.container)
+	var points_list = ["5", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95", "100"]
+	var pts_selector = _create_selector("POINTS", points_list, 1)
+	pts_selector.on_left = func(): _cycle_points(-1, pts_selector, points_list)
+	pts_selector.on_right = func(): _cycle_points(1, pts_selector, points_list)
+	panel.add_child(pts_selector.value_label.get_parent())
 	
 	# Separator
 	var sep3 = HSeparator.new()
@@ -408,190 +414,91 @@ func _build_match_setup() -> void:
 	back_btn.pressed.connect(func(): _switch_to_state(MenuState.MAIN_MENU))
 	panel.add_child(back_btn)
 
-func _make_selector(label_text: String, initial_value: int, min_val: int, max_val: int, step: int) -> FocusableSelector:
-	var selector = FocusableSelector.new()
+func _create_selector(label: String, options: Array, initial_index: int) -> SelectorGroup:
+	var selector = SelectorGroup.new()
 	
+	# Container
 	var container = HBoxContainer.new()
-	container.add_theme_constant_override("separation", 20)
+	container.add_theme_constant_override("separation", 15)
 	
-	# GREEN INDICATOR
-	var indicator = Label.new()
-	indicator.text = ">"
-	indicator.custom_minimum_size = Vector2(20, 0)
-	indicator.add_theme_font_size_override("font_size", 28)
-	indicator.add_theme_color_override("font_color", Color(0.0, 1.0, 0.0))
-	indicator.visible = false
-	container.add_child(indicator)
+	# Label
+	var label_lbl = Label.new()
+	label_lbl.text = label
+	label_lbl.custom_minimum_size = Vector2(120, 40)
+	label_lbl.add_theme_font_size_override("font_size", 20)
+	label_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	label_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	container.add_child(label_lbl)
 	
-	var lbl = Label.new()
-	lbl.text = label_text
-	lbl.custom_minimum_size = Vector2(150, 0)
-	lbl.add_theme_font_size_override("font_size", 24)
-	lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	container.add_child(lbl)
+	# Left button
+	var left_btn = Button.new()
+	left_btn.text = "<"
+	left_btn.custom_minimum_size = Vector2(40, 40)
+	left_btn.focus_mode = Control.FOCUS_ALL
+	left_btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0)
+	left_btn.add_theme_stylebox_override("normal", style)
+	left_btn.add_theme_stylebox_override("hover", style)
+	left_btn.add_theme_stylebox_override("pressed", style)
+	left_btn.add_theme_stylebox_override("focus", style)
+	left_btn.add_theme_font_size_override("font_size", 24)
+	left_btn.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	container.add_child(left_btn)
 	
-	var left_arrow = Label.new()
-	left_arrow.text = "<"
-	left_arrow.custom_minimum_size = Vector2(30, 0)
-	left_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	left_arrow.add_theme_font_size_override("font_size", 28)
-	left_arrow.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	container.add_child(left_arrow)
-	
+	# Value label
 	var value_label = Label.new()
-	value_label.text = str(initial_value)
-	value_label.custom_minimum_size = Vector2(100, 0)
+	var current_value = options[initial_index] if initial_index < options.size() else "?"
+	value_label.text = current_value
+	value_label.custom_minimum_size = Vector2(150, 40)
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	value_label.add_theme_font_size_override("font_size", 24)
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	value_label.add_theme_font_size_override("font_size", 20)
 	value_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 	container.add_child(value_label)
 	
-	var right_arrow = Label.new()
-	right_arrow.text = ">"
-	right_arrow.custom_minimum_size = Vector2(30, 0)
-	right_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	right_arrow.add_theme_font_size_override("font_size", 28)
-	right_arrow.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	container.add_child(right_arrow)
+	# Right button
+	var right_btn = Button.new()
+	right_btn.text = ">"
+	right_btn.custom_minimum_size = Vector2(40, 40)
+	right_btn.focus_mode = Control.FOCUS_ALL
+	right_btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	style = StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0)
+	right_btn.add_theme_stylebox_override("normal", style)
+	right_btn.add_theme_stylebox_override("hover", style)
+	right_btn.add_theme_stylebox_override("pressed", style)
+	right_btn.add_theme_stylebox_override("focus", style)
+	right_btn.add_theme_font_size_override("font_size", 24)
+	right_btn.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	container.add_child(right_btn)
 	
-	selector.container = container
+	selector.left_button = left_btn
 	selector.value_label = value_label
-	selector.left_arrow = left_arrow
-	selector.right_arrow = right_arrow
-	selector.focus_indicator = indicator
+	selector.right_button = right_btn
+	
+	# Store label for updating text
+	selector.value_label.set_meta("label", label)
+	selector.value_label.set_meta("options", options)
+	selector.value_label.set_meta("index", initial_index)
+	selector.value_label.set_meta("selector", selector)
+	
+	# Connect button clicks to selector actions
+	left_btn.pressed.connect(func(): selector.on_left.call())
+	right_btn.pressed.connect(func(): selector.on_right.call())
 	
 	return selector
 
-func _make_map_selector() -> FocusableSelector:
-	var selector = FocusableSelector.new()
-	
-	var container = HBoxContainer.new()
-	container.add_theme_constant_override("separation", 20)
-	
-	# GREEN INDICATOR
-	var indicator = Label.new()
-	indicator.text = ">"
-	indicator.custom_minimum_size = Vector2(20, 0)
-	indicator.add_theme_font_size_override("font_size", 28)
-	indicator.add_theme_color_override("font_color", Color(0.0, 1.0, 0.0))
-	indicator.visible = false
-	container.add_child(indicator)
-	
-	var lbl = Label.new()
-	lbl.text = "MAP:"
-	lbl.custom_minimum_size = Vector2(150, 0)
-	lbl.add_theme_font_size_override("font_size", 24)
-	lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	container.add_child(lbl)
-	
-	var left_arrow = Label.new()
-	left_arrow.text = "<"
-	left_arrow.custom_minimum_size = Vector2(30, 0)
-	left_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	left_arrow.add_theme_font_size_override("font_size", 28)
-	left_arrow.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	container.add_child(left_arrow)
-	
-	var map_label = Label.new()
-	map_label.text = selected_map
-	map_label.custom_minimum_size = Vector2(150, 0)
-	map_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	map_label.add_theme_font_size_override("font_size", 24)
-	map_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	container.add_child(map_label)
-	
-	var right_arrow = Label.new()
-	right_arrow.text = ">"
-	right_arrow.custom_minimum_size = Vector2(30, 0)
-	right_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	right_arrow.add_theme_font_size_override("font_size", 28)
-	right_arrow.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	container.add_child(right_arrow)
-	
-	selector.container = container
-	selector.value_label = map_label
-	selector.left_arrow = left_arrow
-	selector.right_arrow = right_arrow
-	selector.focus_indicator = indicator
-	selector.on_left = func(): _change_map(-1, selector)
-	selector.on_right = func(): _change_map(1, selector)
-	
-	return selector
-
-func _make_weapon_selector(label_text: String, weapons_list: Array, initial_index: int) -> FocusableSelector:
-	var selector = FocusableSelector.new()
-	
-	var container = HBoxContainer.new()
-	container.add_theme_constant_override("separation", 20)
-	
-	# GREEN INDICATOR
-	var indicator = Label.new()
-	indicator.text = ">"
-	indicator.custom_minimum_size = Vector2(20, 0)
-	indicator.add_theme_font_size_override("font_size", 24)
-	indicator.add_theme_color_override("font_color", Color(0.0, 1.0, 0.0))
-	indicator.visible = false
-	container.add_child(indicator)
-	
-	var lbl = Label.new()
-	lbl.text = label_text
-	lbl.custom_minimum_size = Vector2(130, 0)
-	lbl.add_theme_font_size_override("font_size", 18)
-	lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	container.add_child(lbl)
-	
-	var left_arrow = Label.new()
-	left_arrow.text = "<"
-	left_arrow.custom_minimum_size = Vector2(30, 0)
-	left_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	left_arrow.add_theme_font_size_override("font_size", 24)
-	left_arrow.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	container.add_child(left_arrow)
-	
-	var value_label = Label.new()
-	if weapons_list.is_empty():
-		value_label.text = "NONE"
-	else:
-		value_label.text = weapons_list[initial_index]
-	value_label.custom_minimum_size = Vector2(120, 0)
-	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	value_label.add_theme_font_size_override("font_size", 18)
-	value_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	container.add_child(value_label)
-	
-	var right_arrow = Label.new()
-	right_arrow.text = ">"
-	right_arrow.custom_minimum_size = Vector2(30, 0)
-	right_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	right_arrow.add_theme_font_size_override("font_size", 24)
-	right_arrow.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	container.add_child(right_arrow)
-	
-	selector.container = container
-	selector.value_label = value_label
-	selector.left_arrow = left_arrow
-	selector.right_arrow = right_arrow
-	selector.focus_indicator = indicator
-	
-	return selector
-
-func _change_points(direction: int, selector: FocusableSelector) -> void:
-	selected_points = clamp(selected_points + direction, 5, 100)
-	selector.value_label.text = str(selected_points)
-
-func _change_map(direction: int, selector: FocusableSelector) -> void:
-	current_map_index = (current_map_index + direction + available_maps.size()) % available_maps.size()
-	selected_map = available_maps[current_map_index]
-	selector.value_label.text = selected_map
-
-func _change_weapon(direction: int, selector: FocusableSelector, weapons_list: Array, loadout_key: String) -> void:
+func _cycle_weapon(direction: int, selector: SelectorGroup, weapons_list: Array, loadout_key: String) -> void:
 	if weapons_list.is_empty():
 		return
 	
-	var current_index = weapons_list.find(selector.value_label.text)
+	var current_index = selector.value_label.get_meta("index")
 	current_index = (current_index + direction + weapons_list.size()) % weapons_list.size()
+	
 	var new_weapon_name = weapons_list[current_index]
 	selector.value_label.text = new_weapon_name
+	selector.value_label.set_meta("index", current_index)
 	
 	# Get the actual weapon resource
 	var weapon_resource = null
@@ -615,6 +522,23 @@ func _change_weapon(direction: int, selector: FocusableSelector, weapons_list: A
 		"p1_secondary":
 			p1_loadout["secondary"] = weapon_resource
 			current_p1_secondary_index = current_index
+
+func _cycle_map(direction: int, selector: SelectorGroup) -> void:
+	var current_index = selector.value_label.get_meta("index")
+	current_index = (current_index + direction + available_maps.size()) % available_maps.size()
+	
+	selected_map = available_maps[current_index]
+	current_map_index = current_index
+	selector.value_label.text = selected_map
+	selector.value_label.set_meta("index", current_index)
+
+func _cycle_points(direction: int, selector: SelectorGroup, points_list: Array) -> void:
+	var current_index = selector.value_label.get_meta("index")
+	current_index = (current_index + direction + points_list.size()) % points_list.size()
+	
+	selected_points = int(points_list[current_index])
+	selector.value_label.text = points_list[current_index]
+	selector.value_label.set_meta("index", current_index)
 
 # ==================== MULTIPLAYER LOBBY ====================
 
@@ -724,14 +648,13 @@ func _build_multiplayer_lobby() -> void:
 
 # ==================== BUTTON CREATION ====================
 
-func _make_button(text: String, highlight: bool = false) -> Button:
+func _make_button(text: String) -> Button:
 	var btn = Button.new()
 	btn.text = text
 	btn.custom_minimum_size = Vector2(0, 40)
 	btn.focus_mode = Control.FOCUS_ALL
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	
-	# Transparent background
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0, 0, 0, 0)
 	style.border_width_left = 0
@@ -770,33 +693,32 @@ func _switch_to_state(new_state: MenuState) -> void:
 			multiplayer_lobby_container.visible = true
 			_populate_focusable_items(multiplayer_lobby_container)
 	
-	# Focus first item
+	# Focus first item but don't highlight it yet
 	current_focus_index = 0
-	if not current_focusable_items.is_empty():
-		_update_focus()
+	last_input_device = "mouse"  # Start with mouse mode, no highlights
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 func _populate_focusable_items(container: Node) -> void:
-	for child in _get_all_children(container):
-		if child is Button and child.visible:
-			current_focusable_items.append(child)
-		elif child is HBoxContainer:
-			# Check if this is a selector container
-			var selector = _find_selector_for_container(child)
-			if selector:
-				current_focusable_items.append(selector)
+	current_focusable_items.clear()
+	
+	# Recursively find all buttons and selectors in order
+	_collect_focusable_items(container)
 
-func _find_selector_for_container(container: HBoxContainer) -> FocusableSelector:
-	for selector in _all_selectors:
-		if selector.container == container:
-			return selector
-	return null
-
-func _get_all_children(node: Node) -> Array:
-	var children = []
+func _collect_focusable_items(node: Node) -> void:
 	for child in node.get_children():
-		children.append(child)
-		children.append_array(_get_all_children(child))
-	return children
+		if child is Button and child.visible and child.focus_mode == Control.FOCUS_ALL:
+			current_focusable_items.append(child)
+		elif child is HBoxContainer and child.visible:
+			# Check if this is a selector container by looking for any child with selector metadata
+			for subchild in child.get_children():
+				if subchild.has_meta("selector"):
+					var sel = subchild.get_meta("selector")
+					current_focusable_items.append(sel)
+					break
+		
+		# Recurse for non-HBoxContainer children
+		if not (child is HBoxContainer):
+			_collect_focusable_items(child)
 
 # ==================== GAME LOGIC ====================
 
@@ -808,11 +730,8 @@ func _start_local_match() -> void:
 	if sprite_node and sprite_node is Sprite2D:
 		sprite_node.visible = true
 	
-	# Wait for rendering to actually happen
 	await RenderingServer.frame_post_draw
-	await RenderingServer.frame_post_draw  # Extra frame for safety
-	
-	# Small additional delay for complex shaders
+	await RenderingServer.frame_post_draw
 	await get_tree().create_timer(3.5).timeout
 	
 	Game.player_loadouts = [p0_loadout, p1_loadout]
@@ -867,7 +786,6 @@ func _on_lobby_connected() -> void:
 	lobby_buttons["start"].visible = is_leader
 	lobby_buttons["leave"].show()
 	
-	# Update items list for navigation
 	if current_state == MenuState.MULTIPLAYER_LOBBY:
 		_populate_focusable_items(multiplayer_lobby_container)
 		_update_focus()
@@ -883,7 +801,6 @@ func _on_lobby_disconnected() -> void:
 	lobby_buttons["start"].hide()
 	lobby_buttons["leave"].hide()
 	
-	# Update items list for navigation
 	if current_state == MenuState.MULTIPLAYER_LOBBY:
 		_populate_focusable_items(multiplayer_lobby_container)
 		_update_focus()

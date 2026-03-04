@@ -7436,7 +7436,7 @@ mesh = SubResource("ArrayMesh_svtjj")
 skin = SubResource("Skin_knj2i")
 
 [node name="mixamorig_RightHand" type="BoneAttachment3D" parent="body/body_rig/Armature/Skeleton3D"]
-transform = Transform3D(-0.165184, 0.0712935, 0.983683, 0.0433557, 0.996945, -0.0649743, -0.98531, 0.0319154, -0.167771, -22.0667, 9.02835, -129.902)
+transform = Transform3D(-0.165186, 0.0712954, 0.983682, 0.0433552, 0.996944, -0.0649763, -0.985309, 0.0319145, -0.167773, -22.0667, 9.02836, -129.902)
 bone_name = "mixamorig_RightHand"
 bone_idx = 40
 
@@ -7470,7 +7470,6 @@ surface_material_override/0 = ExtResource("15_m83dv")
 
 [node name="Kar98" type="MeshInstance3D" parent="body/body_rig/Armature/Skeleton3D/mixamorig_RightHand"]
 transform = Transform3D(20.4935, 97.5284, 1.54663, -7.23036, 3.09499, -99.3595, -97.2721, 20.3175, 7.71134, 5.63523, -2.43698, 16.1583)
-visible = false
 mesh = SubResource("ArrayMesh_qurgt")
 skin = SubResource("Skin_mds53")
 skeleton = NodePath("")
