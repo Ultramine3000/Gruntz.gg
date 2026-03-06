@@ -1240,6 +1240,7 @@ func _set_muzzle_flash_vis_recursive(parent):
 
 var last_muzzle_rotation := -999.0
 var muzzle_rotation_repeat_count := 0
+var active_muzzle_flashes := 0  # Track how many flash coroutines are active
 
 func activate_muzzle_flash():
 	var is_scoped_ads = false
@@ -1248,19 +1249,26 @@ func activate_muzzle_flash():
 		if "is_sniper" in armature and "is_ads" in armature:
 			is_scoped_ads = armature.is_sniper and armature.is_ads
 
+	# Always show before hiding previous frame's flash
 	if not is_scoped_ads and current_arm_rig and current_arm_rig.has_node("LVA4_Armature/muzzle_flash"):
 		_activate_muzzle_meshes(current_arm_rig.get_node("LVA4_Armature/muzzle_flash"))
 
 	if has_node(player_muzzle_flash):
 		_activate_muzzle_meshes(get_node(player_muzzle_flash))
 
-	await get_tree().create_timer(0.1).timeout
+	# Increment counter and start hide timer
+	active_muzzle_flashes += 1
+	var flash_id = active_muzzle_flashes
+	
+	await get_tree().create_timer(0.08).timeout
+	
+	# Only hide if this is still the most recent flash
+	if flash_id == active_muzzle_flashes:
+		if not is_scoped_ads and current_arm_rig and current_arm_rig.has_node("LVA4_Armature/muzzle_flash"):
+			_deactivate_muzzle_meshes(current_arm_rig.get_node("LVA4_Armature/muzzle_flash"))
 
-	if not is_scoped_ads and current_arm_rig and current_arm_rig.has_node("LVA4_Armature/muzzle_flash"):
-		_deactivate_muzzle_meshes(current_arm_rig.get_node("LVA4_Armature/muzzle_flash"))
-
-	if has_node(player_muzzle_flash):
-		_deactivate_muzzle_meshes(get_node(player_muzzle_flash))
+		if has_node(player_muzzle_flash):
+			_deactivate_muzzle_meshes(get_node(player_muzzle_flash))
 
 func _activate_muzzle_meshes(flash_node: Node3D):
 	_activate_meshes_recursive(flash_node)

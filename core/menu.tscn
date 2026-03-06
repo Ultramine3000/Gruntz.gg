@@ -11,7 +11,7 @@
 [ext_resource type="Resource" uid="uid://b1un2a15q5vl7" path="res://assets/weapons/TarusJudge.tres" id="5_8ah6k"]
 [ext_resource type="AudioStream" uid="uid://4qqycaieat1f" path="res://assets/sfx/menu/Groves.mp3" id="5_ffj4i"]
 [ext_resource type="Resource" uid="uid://dkyuqdu3rb028" path="res://assets/weapons/Fists.tres" id="5_kgx2x"]
-[ext_resource type="Texture2D" uid="uid://d0w0t68gudbvw" path="res://icon.svg" id="5_txbfy"]
+[ext_resource type="Texture2D" uid="uid://d0w0t68gudbvw" path="res://godot_icon.svg" id="5_txbfy"]
 [ext_resource type="Texture2D" uid="uid://ggsmtdl0lfq1" path="res://assets/textures/ui/vignette.png" id="6_grplm"]
 
 [node name="menu" type="Control"]

@@ -13,7 +13,8 @@ config_version=5
 config/name="Gruntz.gg"
 run/main_scene="uid://bljkplcgy1ue1"
 config/features=PackedStringArray("4.4", "Forward Plus")
-config/icon="res://icon.svg"
+boot_splash/image="uid://drupxa5qhiwkv"
+config/icon="res://gruntz_icon.svg"
 
 [autoload]
 
