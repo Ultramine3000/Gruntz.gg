@@ -24,6 +24,7 @@ AudioManager="*res://scripts/__AudioManager.gd"
 PFXManager="*res://scripts/__PFXManager.gd"
 Multiplayer="*res://scripts/__Multiplayer.gd"
 Matchmaking="*res://scripts/__Matchmaking.gd"
+NetworkManager="*res://scripts/autoload/__NetworkManager.gd"
 
 [display]
 
@@ -32,6 +33,14 @@ window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/quality/msaa_3d=3
 window/quality/screen_space_aa=1
+
+[dotnet]
+
+project/assembly_name="Gruntz.gg"
+
+[filesystem]
+
+import/blender/enabled=false
 
 [global_group]
 
