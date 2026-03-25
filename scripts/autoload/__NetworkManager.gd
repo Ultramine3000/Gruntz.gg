@@ -25,6 +25,7 @@ func _ready() -> void:
 # Public API
 # -------------------
 
+# Response: RoomResponse (direct)
 func create_room(max_players: int = 4) -> void:
 	var res = await room_service.create_room(max_players)
 
@@ -32,12 +33,13 @@ func create_room(max_players: int = 4) -> void:
 		_emit_error(res)
 		return
 
-	current_room = res.get("room", null)
-	player_id = res.get("player_id", "")
+	current_room = res
+	player_id = ""
 
-	emit_signal("room_updated", current_room)
+	emit_signal("room_updated", RoomDTO.from_dict(current_room))
 
 
+# Response: { "room": RoomResponse, "player_id": String }
 func join_room(room_id: String, player_name: String) -> void:
 	var res = await room_service.join_room(room_id, player_name)
 
@@ -45,17 +47,18 @@ func join_room(room_id: String, player_name: String) -> void:
 		_emit_error(res)
 		return
 
-	current_room = res.get("room", null)
+	current_room = res.get("room", {})
 	player_id = res.get("player_id", "")
 
-	emit_signal("room_joined", current_room)
+	emit_signal("room_joined", RoomDTO.from_dict(current_room))
 
 
+# Response: { "room": RoomResponse }
 func leave_room() -> void:
 	if current_room == null or player_id == "":
 		return
 
-	var room_id := current_room["room_id"] as String
+	var room_id := current_room["id"] as String
 	var res = await room_service.leave_room(room_id, player_id)
 
 	if res.has("error"):
@@ -68,19 +71,20 @@ func leave_room() -> void:
 	emit_signal("room_left")
 
 
+# Response: RoomResponse (direct)
 func refresh_room() -> void:
 	if current_room == null:
 		return
 
-	var room_id := current_room["room_id"] as String
+	var room_id := current_room["id"] as String
 	var res = await room_service.get_room(room_id)
 
 	if res.has("error"):
 		_emit_error(res)
 		return
 
-	current_room = res.get("room", null)
-	emit_signal("room_updated", current_room)
+	current_room = res
+	emit_signal("room_updated", RoomDTO.from_dict(current_room))
 
 
 # -------------------

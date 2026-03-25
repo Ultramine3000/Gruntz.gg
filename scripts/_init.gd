@@ -7,26 +7,24 @@ extends Node
 
 
 func _ready() -> void:
-	if "--masterserver" in OS.get_cmdline_args():
-		Matchmaking.start_masterserver(Multiplayer.MASTERSERVER_PORT)
-		return
+	NetworkManager.room_joined.connect(_on_room_joined)
+	NetworkManager.error_occurred.connect(_on_error)
 	
-	if "--server" in OS.get_cmdline_args():
-		var port := Multiplayer.MASTERSERVER_PORT
-		for arg in OS.get_cmdline_args():
-			if arg.begins_with("--port="):
-				port = int(arg)
-		Multiplayer.init_lobby()
-		Multiplayer.host(port)
-		Matchmaking.init_lobby()
-		Matchmaking.start_client("localhost", Multiplayer.MASTERSERVER_PORT)
-		return
+	await NetworkManager.create_room(4)
+	var room_id = NetworkManager.current_room["id"]
+	await NetworkManager.join_room(room_id, "Valentino")
+	await NetworkManager.leave_room()
+	await NetworkManager.refresh_room()
 	
-	Matchmaking.init_client()
-	Multiplayer.init_client()
-	if skip_menu: 
+	if skip_menu:
 		Game.start_match(map_name, player_count)
 		return
 	
 	var menu = load("res://core/menu.tscn").instantiate()
 	add_child(menu)
+
+func _on_room_joined(room: RoomDTO) -> void:
+	print("Room joined: ", room)
+
+func _on_error(message: String) -> void:
+	print("Network Error: ", message)

@@ -8,7 +8,7 @@ var players:     Array  = []
 
 static func from_dict(data: Dictionary) -> RoomDTO:
 	var dto         := RoomDTO.new()
-	dto.room_id     = data.get("room_id", "")
+	dto.room_id     = data.get("id", "")
 	dto.max_players = data.get("max_players", 0)
 	dto.status      = data.get("status", "")
 	dto.players     = data.get("players", [])
