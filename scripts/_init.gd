@@ -11,7 +11,7 @@ func _ready() -> void:
 	NetworkManager.error_occurred.connect(_on_error)
 	
 	await NetworkManager.create_room(4)
-	var room_id = NetworkManager.current_room["id"]
+	var room_id = NetworkManager.current_room.room_id
 	await NetworkManager.join_room(room_id, "Valentino")
 	await NetworkManager.leave_room()
 	await NetworkManager.refresh_room()
@@ -26,5 +26,5 @@ func _ready() -> void:
 func _on_room_joined(room: RoomDTO) -> void:
 	print("Room joined: ", room)
 
-func _on_error(message: String) -> void:
-	print("Network Error: ", message)
+func _on_error(code: String, message: String) -> void:
+	print("Network Error [", code, "]: ", message)

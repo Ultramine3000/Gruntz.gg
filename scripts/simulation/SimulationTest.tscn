@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://3fp3fy01m1yn"]
+
+[ext_resource type="Script" uid="uid://7u5rjfpmma43" path="res://scripts/simulation/simulation_test.gd" id="1_ojyuu"]
+
+[node name="SimulationTest" type="Node"]
+script = ExtResource("1_ojyuu")

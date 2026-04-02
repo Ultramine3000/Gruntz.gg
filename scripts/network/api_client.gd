@@ -3,28 +3,32 @@ extends Node
 
 var base_url: String = ""
 
-var _http: HTTPRequest
-
-
-func _ready() -> void:
-	_http = HTTPRequest.new()
-	add_child(_http)
-
 
 func request(method: String, path: String, body: Dictionary = {}) -> Dictionary:
+	var http := HTTPRequest.new()
+	add_child(http)
+
 	var url     := base_url + path
 	var headers := PackedStringArray(["Content-Type: application/json"])
 	var http_method := _resolve_method(method)
 	var json_body   := JSON.stringify(body) if not body.is_empty() else ""
 
-	var err := _http.request(url, headers, http_method, json_body)
+	var err := http.request(url, headers, http_method, json_body)
 	if err != OK:
+		http.queue_free()
 		return {
 			"code": -1,
-			"body": { "error": { "message": "Failed to send request." } }
+			"body": {
+				"error": {
+					"code": "REQUEST_FAILED",
+					"message": "Failed to send request."
+				}
+			}
 		}
 
-	var result: Array      = await _http.request_completed
+	var result: Array = await http.request_completed
+	http.queue_free()
+
 	var response_code: int = result[1]
 	var raw_body: PackedByteArray = result[3]
 

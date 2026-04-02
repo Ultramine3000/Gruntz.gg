@@ -28,3 +28,8 @@ func leave_room(room_id: String, player_id: String) -> Dictionary:
 	var path := ApiRoutes.ROOMS_LEAVE % room_id
 	var res = await _api.request("POST", path, {"player_id": player_id})
 	return res["body"]
+
+
+func get_debug_stats() -> Dictionary:
+	var res = await _api.request("GET", ApiRoutes.DEBUG_STATS)
+	return res["body"]
